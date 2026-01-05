@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'register.dart';
-import 'editprofile.dart';
+import 'main_page.dart';
 import 'forgot_password.dart';
 
 class LoginPage extends StatefulWidget {
@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
       // ΕΠΙΤΥΧΙΑ: Πάμε στο Profile
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const EditProfilePage()),
+        MaterialPageRoute(builder: (context) => const MainProfilePage()),
       );
     } else if (email == "admin@fitlinkr.gr" && password != "123456"){
       // ΣΦΑΛΜΑ: Λάθος κωδικός
@@ -170,3 +170,4 @@ class _LoginPageState extends State<LoginPage> {
   }
 
 }
+
