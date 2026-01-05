@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
   go_router: ^14.2.7
+  firebase_core: ^4.3.0
+  firebase_auth: ^6.1.3
+  cloud_firestore: ^6.1.1
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:
@@ -21,6 +25,12 @@ flutter:
 
   assets:
     - assets/logo.png
+    - assets/professional_icon.png 
+    - assets/learner_icon.png
+    - assets/friend_icon.png
+    - assets/swolemate_icon.png
+    - assets/verify_completed.png
+
 
   fonts:
     - family: Jura
