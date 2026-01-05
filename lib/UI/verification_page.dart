@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; //
-import 'editprofile.dart'; // Import για το Navigation
+import 'package:image_picker/image_picker.dart'; 
+import 'editprofile.dart'; 
 
 class VerificationProcessPage extends StatefulWidget {
-  final String userMode; // Περνάμε το mode: 'trainer', 'gym', 'physio', ή 'nutritionist'
+  final String userMode; 
 
   const VerificationProcessPage({super.key, required this.userMode});
 
@@ -13,11 +13,11 @@ class VerificationProcessPage extends StatefulWidget {
 
 class _VerificationProcessPageState extends State<VerificationProcessPage> {
   final ImagePicker _picker = ImagePicker();
-  bool _isSubmitted = false; // Εναλλαγή μεταξύ Upload και Thank You
+  bool _isSubmitted = false; 
+  bool _isLoading = false; // Νέα μεταβλητή για το loading state
   XFile? _idImage;
   XFile? _certImage;
 
-  // Λειτουργία επιλογής εικόνας (Κάμερα ή Γκαλερί)
   Future<void> _pickImage(ImageSource source, bool isID) async {
     final XFile? selected = await _picker.pickImage(source: source);
     if (selected != null) {
@@ -27,7 +27,6 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
     }
   }
 
-  // Το αναδυόμενο παράθυρο επιλογής
   void _showPickerOptions(bool isID) {
     showModalBottomSheet(
       context: context,
@@ -50,7 +49,6 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
     );
   }
 
-  // Δυναμικό εικονίδιο Mode που λειτουργεί ως κουμπί
   Widget _getModeButton() {
     return GestureDetector(
       onTap: () {
@@ -74,20 +72,22 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, // Αφαιρούμε το default βελάκι
+        automaticallyImplyLeading: false, 
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Image.asset('assets/logo.png', height: 40), // FitLinkr Logo
-            _getModeButton(), // Το εικονίδιο Mode που σε πάει στο Edit
+            Image.asset('assets/logo.png', height: 40), 
+            _getModeButton(), 
           ],
         ),
       ),
-      body: _isSubmitted ? _buildThankYouView() : _buildUploadView(),
+      // Εναλλαγή μεταξύ των 3 καταστάσεων: Loading, Success, ή Upload
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Colors.blue)) 
+        : (_isSubmitted ? _buildThankYouView() : _buildUploadView()),
     );
   }
 
-  // --- VIEW 1: UPLOAD DOCUMENTS ---
   Widget _buildUploadView() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -108,7 +108,25 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
           const Spacer(),
           Center(
             child: ElevatedButton(
-              onPressed: () => setState(() => _isSubmitted = true), // Μετάβαση στο Thank You
+              onPressed: () async {
+                // Έλεγχος αν λείπουν αρχεία
+                if (_idImage == null || _certImage == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please upload both documents!"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                } else {
+                  // Προσομοίωση φόρτωσης
+                  setState(() => _isLoading = true);
+                  await Future.delayed(const Duration(seconds: 2));
+                  setState(() {
+                    _isLoading = false;
+                    _isSubmitted = true;
+                  });
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2196F3),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -130,13 +148,13 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
     );
   }
 
-  // --- VIEW 2: THANK YOU PAGE ---
   Widget _buildThankYouView() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Center(child: Image.asset('assets/verify_completed.png', height: 70)),
+          Center(child: Image.asset('assets/verify_completed.png', height: 100, 
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.check_circle, color: Colors.blue, size: 100))),
           const SizedBox(height: 20),
           const Text("THANK YOU!!!", 
               style: TextStyle(color: Colors.white, fontFamily: 'Jura', fontSize: 38, fontWeight: FontWeight.bold)),
@@ -147,7 +165,6 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
             style: TextStyle(color: Colors.white70, fontFamily: 'Jura', fontSize: 16, fontWeight: FontWeight.bold ),
           ),
           const SizedBox(height: 40),
-          // Το λευκό box με το status
           Container(
             width: 320,
             padding: const EdgeInsets.all(20),
@@ -158,6 +175,29 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
                 _StatusItem(icon: Icons.camera_alt, text: "Take a Picture"),
                 _StatusItem(icon: Icons.file_copy, text: "Certifications Uploaded"),
               ],
+            ),
+          ),
+          const SizedBox(height: 40),
+          // Νέο κουμπί επιστροφής
+          ElevatedButton(
+            onPressed: () {
+              // Μεταφορά στην Edit Profile Page και καθαρισμός του ιστορικού πλοήγησης
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                (route) => false, // Αυτό αφαιρεί όλες τις προηγούμενες σελίδες από το stack
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red, width: 2),
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+            ),
+            child: const Text(
+              "Return to main", 
+              style: TextStyle(fontWeight: FontWeight.bold)
             ),
           ),
         ],
@@ -180,9 +220,10 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
               children: [
                 Icon(Icons.camera_alt, color: isDone ? Colors.green : Colors.red),
                 const SizedBox(width: 10),
-                Text(isDone ? "File Uploaded Successfully!" : label, 
-                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
-                const Spacer(),
+                Expanded(
+                  child: Text(isDone ? "File Uploaded Successfully!" : label, 
+                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
+                ),
                 if (isDone) const Icon(Icons.check_circle, color: Colors.green),
               ],
             ),
@@ -193,7 +234,6 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
   }
 }
 
-// Helper Widget για τη λίστα στο Thank You Box
 class _StatusItem extends StatelessWidget {
   final IconData icon;
   final String text;
