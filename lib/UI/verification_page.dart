@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; 
-import 'editprofile.dart'; 
+import 'main_page.dart'; 
 
 class VerificationProcessPage extends StatefulWidget {
   final String userMode; 
@@ -54,7 +54,7 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const EditProfilePage()),
+          MaterialPageRoute(builder: (context) => const MainProfilePage()),
         );
       },
       child: Image.asset(
@@ -181,10 +181,10 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
           // Νέο κουμπί επιστροφής
           ElevatedButton(
             onPressed: () {
-              // Μεταφορά στην Edit Profile Page και καθαρισμός του ιστορικού πλοήγησης
+              // Μεταφορά στην Main Profile Page και καθαρισμός του ιστορικού πλοήγησης
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                MaterialPageRoute(builder: (context) => const MainProfilePage()),
                 (route) => false, // Αυτό αφαιρεί όλες τις προηγούμενες σελίδες από το stack
               );
             },
@@ -254,3 +254,4 @@ class _StatusItem extends StatelessWidget {
     );
   }
 }
+
