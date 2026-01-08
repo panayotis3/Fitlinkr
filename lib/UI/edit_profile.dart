@@ -27,6 +27,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _interests = '';
   String _age = '';
   String _level = '';
+  String _gender = 'Prefer not to say';
   String? _avatarPath;
   String _currentMode = 'friend';
   Image _modeIcon(String mode) {
@@ -51,6 +52,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _interests = widget.tester.interests;
     _age = widget.tester.age.toString();
     _level = widget.tester.level;
+    _gender = widget.tester.gender;
     _loadAvatar();
   }
 
@@ -123,6 +125,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required String interests,
     required String age,
     required String level,
+    required String gender,
   }) async {
     final box = await Hive.openBox<Tester>('testers_v2');
     final key = box.keys.cast<dynamic>().firstWhere((k) {
@@ -139,6 +142,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       interests: interests,
       age: int.tryParse(age) ?? widget.tester.age,
       level: level,
+      gender: gender,
     );
 
     if (key != null) {
@@ -153,6 +157,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _interests = interests;
       _age = age;
       _level = level;
+      _gender = gender;
     });
 
     if (mounted) {
@@ -208,7 +213,39 @@ class _EditProfilePageState extends State<EditProfilePage> {
     // ignore: no_leading_underscores_for_local_identifiers
     final _formKey = GlobalKey<FormState>();
     final nameCtrl = TextEditingController(text: _name);
-    final countryCtrl = TextEditingController(text: _country);
+    final List<String> countries = [
+      'United States',
+      'United Kingdom',
+      'Canada',
+      'Australia',
+      'Germany',
+      'France',
+      'Spain',
+      'Italy',
+      'Greece',
+      'Netherlands',
+      'Belgium',
+      'Switzerland',
+      'Austria',
+      'Portugal',
+      'Sweden',
+      'Norway',
+      'Denmark',
+      'Finland',
+      'Poland',
+      'Ireland',
+      'Japan',
+      'South Korea',
+      'China',
+      'India',
+      'Brazil',
+      'Mexico',
+      'Argentina',
+      'Chile',
+      'New Zealand',
+      'South Africa',
+    ];
+    String selectedCountry = countries.contains(_country) ? _country : (countries.isNotEmpty ? countries.first : '');
     final List<String> interestOptions = [
       'Gym',
       'Yoga',
@@ -232,6 +269,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final ageCtrl = TextEditingController(text: _age);
     final List<String> levels = ['Beginner', 'Intermediate', 'Expert'];
     String selectedLevel = levels.contains(_level) ? _level : 'Beginner';
+    final List<String> genders = ['Male', 'Female', 'Prefer not to say'];
+    String selectedGender = genders.contains(_gender) ? _gender : 'Prefer not to say';
     ImageProvider? avatarImage = _avatarPath != null
         ? FileImage(File(_avatarPath!))
         : null;
@@ -375,8 +414,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       style: TextStyle(color: Colors.white),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
-                      controller: countryCtrl,
+                    DropdownButtonFormField<String>(
+                      value: selectedCountry,
+                      items: countries
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c,
+                              child: Text(c),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          setModalState(() {
+                            selectedCountry = v;
+                          });
+                        }
+                      },
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xFFD9D9D9),
@@ -485,6 +539,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ),
 
+                    const SizedBox(height: 12),
+                    const Text('Gender', style: TextStyle(color: Colors.white)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: selectedGender,
+                      items: genders
+                          .map(
+                            (g) => DropdownMenuItem(
+                              value: g,
+                              child: Text(g),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          setModalState(() {
+                            selectedGender = v;
+                          });
+                        }
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFFD9D9D9),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -497,10 +581,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   .join(', ');
                               await _saveProfile(
                                 name: nameCtrl.text.trim(),
-                                country: countryCtrl.text.trim(),
+                                country: selectedCountry,
                                 interests: interestsClean,
                                 age: ageCtrl.text.trim(),
                                 level: selectedLevel,
+                                gender: selectedGender,
                               );
                               // ignore: use_build_context_synchronously
                               Navigator.of(context).pop();
@@ -707,6 +792,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fontSize: 16,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Gender: $_gender',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
                           Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: ElevatedButton(
@@ -775,6 +868,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             );
           },
+          onTap: () {
+            setState(() {
+              _currentMode = 'professional';
+            });
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => const SwipePage(mode: 'Professional'),
+              ),
+            );
+          },
         ),
         _modeTile(
           'Learner',
@@ -791,7 +894,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             });
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const RegisterPage(mode: 'Learner'),
+                builder: (ctx) => const SwipePage(mode: 'Learner'),
               ),
             );
           },
@@ -811,7 +914,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             });
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const RegisterPage(mode: 'Friend'),
+                builder: (ctx) => const SwipePage(mode: 'Friend'),
               ),
             );
           },
@@ -831,7 +934,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             });
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const RegisterPage(mode: 'Swole-mate'),
+                builder: (ctx) => const SwipePage(mode: 'Swole-mate'),
               ),
             );
           },

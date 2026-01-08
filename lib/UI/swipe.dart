@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart'; // Απαραίτητο import
 
-class RegisterPage extends StatelessWidget {
+class SwipePage extends StatelessWidget {
   final String mode;
-  const RegisterPage({super.key, required this.mode});
+  const SwipePage({super.key, required this.mode});
   
   @override
   
