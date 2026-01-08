@@ -55,6 +55,7 @@ Future<void> main() async {
 
   runApp(const FitLinkrApp());
 }
+//οριζει theme και πρωτη οθονη
 class FitLinkrApp extends StatelessWidget {
   const FitLinkrApp({super.key});
 
