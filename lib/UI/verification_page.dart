@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; //
 
 class VerificationProcessPage extends StatefulWidget {
-  final String userMode; // Περνάμε το mode: 'trainer', 'gym', 'physio', ή 'nutritionist'
+  final String userMode; 
 
   const VerificationProcessPage({super.key, required this.userMode});
 

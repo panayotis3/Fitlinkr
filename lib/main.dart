@@ -3,12 +3,12 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bcrypt/bcrypt.dart';
 
 import 'models/tester.dart';
-import 'app.dart'; // This links to your other file
+import 'app.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive and open the testers box (versioned)
+  // dinoume access sthn Hive kai arxikopoioume to box
   await Hive.initFlutter();
   Hive.registerAdapter(TesterAdapter());
   final box = await Hive.openBox<Tester>('testers_v2');
