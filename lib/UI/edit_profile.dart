@@ -297,7 +297,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     const Center(
                       child: Text(
                         'Account Settings',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'Inter', fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -392,7 +392,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Name', style: TextStyle(color: Colors.white)),
+                    const Text('Name', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: nameCtrl,
@@ -411,10 +411,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     const SizedBox(height: 12),
                     const Text(
                       'Country',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
+                      // ignore: deprecated_member_use
                       value: selectedCountry,
                       items: countries
                           .map(
@@ -444,7 +445,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     const SizedBox(height: 12),
                     const Text(
                       'Interests',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -480,11 +481,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     const SizedBox(height: 6),
                     const Text(
                       'Choose up to 3 interests',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.bold),
                     ),
 
                     const SizedBox(height: 12),
-                    const Text('Age', style: TextStyle(color: Colors.white)),
+                    const Text('Age', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: ageCtrl,
@@ -509,7 +510,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
 
                     const SizedBox(height: 12),
-                    const Text('Level', style: TextStyle(color: Colors.white)),
+                    const Text('Level', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       // ignore: deprecated_member_use
@@ -540,9 +541,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
 
                     const SizedBox(height: 12),
-                    const Text('Gender', style: TextStyle(color: Colors.white)),
+                    const Text('Gender', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
+                      // ignore: deprecated_member_use
                       value: selectedGender,
                       items: genders
                           .map(
@@ -602,7 +604,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                           child: const Text(
                             'SAVE',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Inter'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -621,6 +623,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter',
                             ),
                           ),
                         ),
@@ -727,8 +730,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     );
                   },
                   child: const Text(
-                    'Logout',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    'SIGN OUT',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
                   ),
                 ),
               ),
@@ -750,6 +753,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
+                              fontFamily: 'Inter',
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -758,6 +762,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
+                              fontFamily: 'Inter',
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -766,6 +771,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
+                              fontFamily: 'Inter',
                             ),
                           ),
                         ],
@@ -781,6 +787,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
+                              fontFamily: 'Inter',
                             ),
                           ),
 
@@ -790,18 +797,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Gender: $_gender',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
+                              fontFamily: 'Inter',
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.only(top: 5),
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.redAccent,
@@ -815,7 +815,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               ),
                               onPressed: _openEditModal,
-                              child: const Text('Edit Profile'),
+                              child: const Text('Edit Profile', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],
@@ -846,6 +846,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              fontFamily: 'Inter',
             ),
           ),
         ),
@@ -864,7 +865,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (ctx) =>
-                    const VerificationProcessPage(userMode: 'professional'),
+                    VerificationProcessPage(
+                      userMode: 'professional',
+                      tester: widget.tester,
+                    ),
               ),
             );
           },
@@ -966,7 +970,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(color: Colors.white, fontSize: 18),
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'Inter', fontWeight: FontWeight.bold),
               ),
             ),
             if (onRight != null)
@@ -988,7 +992,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: const [
-                      Text('VERIFY', style: TextStyle(color: Colors.white)),
+                      Text('VERIFY', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                       SizedBox(width: 8),
                       Icon(Icons.check, color: Colors.white, size: 18),
                     ],

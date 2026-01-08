@@ -3,8 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bcrypt/bcrypt.dart';
 
 import 'models/tester.dart';
-import 'ui/login_page.dart'; 
-import 'app.dart'; 
+import 'ui/login.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

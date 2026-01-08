@@ -28,7 +28,11 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
     final XFile? selected = await _picker.pickImage(source: source);
     if (selected != null) {
       setState(() {
-        if (isID) _idImage = selected; else _certImage = selected;
+        if (isID) {
+          _idImage = selected;
+        } else{ 
+          _certImage = selected;
+        }
       });
     }
   }

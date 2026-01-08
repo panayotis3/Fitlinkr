@@ -10,7 +10,7 @@ class Tester {
   final String interests;
   final int age;
   final String level;
-  final string gender;
+  final String gender;
 
   Tester({
     required this.name,
