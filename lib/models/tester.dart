@@ -10,6 +10,7 @@ class Tester {
   final String interests;
   final int age;
   final String level;
+  final string gender;
 
   Tester({
     required this.name,
@@ -19,11 +20,12 @@ class Tester {
     required this.interests,
     required this.age,
     required this.level,
+    required this.gender,
   });
 
   @override
   String toString() {
-    return 'Tester(name: $name, email: $email, country: $country, interests: $interests, age: $age, level: $level)';
+    return 'Tester(name: $name, email: $email, country: $country, interests: $interests, age: $age, level: $level, gender: $gender)';
   }
 }
 
@@ -41,7 +43,8 @@ class TesterAdapter extends TypeAdapter<Tester> {
     final interests = reader.readString();
     final age = reader.readInt();
     final level = reader.readString();
-    return Tester(name: name, email: email, passwordHash: passwordHash, country: country, interests: interests, age: age, level: level);
+    final gender = reader.readString();
+    return Tester(name: name, email: email, passwordHash: passwordHash, country: country, interests: interests, age: age, level: level, gender: gender,);
   }
 
   @override
@@ -53,5 +56,6 @@ class TesterAdapter extends TypeAdapter<Tester> {
     writer.writeString(obj.interests);
     writer.writeInt(obj.age);
     writer.writeString(obj.level);
+    writer.writeString(obj.gender);
   }
 }
