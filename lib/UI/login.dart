@@ -1,9 +1,12 @@
-// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:bcrypt/bcrypt.dart';
+
+
 import 'register.dart';
-import 'edit_profile.dart';
+import 'edit_profile.dart'; 
+import 'forgot_password.dart';
 import '../models/tester.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,130 +18,150 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
-  final _passCtrl = TextEditingController();
-  bool _loading = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
-    _passCtrl.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  // INTEGRATED HIVE LOGIC
+  Future<void> _handleLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() => _loading = true);
-    try {
-      final email = _emailCtrl.text.trim();
-      final pass = _passCtrl.text;
 
+    setState(() => _isLoading = true);
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      // Open Hive Box
       final box = await Hive.openBox<Tester>('testers_v2');
+      
+      // Find User
       final tester = box.values.cast<Tester?>().firstWhere(
         (t) => t != null && t.email.toLowerCase() == email.toLowerCase(),
         orElse: () => null,
       );
 
+      // Simulate a small delay for UX (Optional, remove if you want it instant)
+      await Future.delayed(const Duration(seconds: 1));
+
       if (tester == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No account found for that email')));
+        _showErrorSnackBar("This user does not exist.");
         return;
       }
 
-      final ok = BCrypt.checkpw(pass, tester.passwordHash);
-      if (!ok) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incorrect password')));
+      // Check Password Hash
+      final isPasswordCorrect = BCrypt.checkpw(password, tester.passwordHash);
+      
+      if (!isPasswordCorrect) {
+        _showErrorSnackBar("Wrong email or password. Please try again.");
         return;
       }
 
-      // Success: navigate to EditProfilePage with the tester
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => EditProfilePage(tester: tester)));
+      // SUCCESS: Navigate to Profile
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => EditProfilePage(tester: tester)),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+      _showErrorSnackBar("Login failed: $e");
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A0505),
+      backgroundColor: const Color.fromARGB(255, 26, 5, 5), // Restored original dark red
       body: Center(
         child: SizedBox(
-          width: 350, // This keeps the content from touching the screen edges
+          width: 350,
           child: SingleChildScrollView(
             child: Form(
               key: _formKey,
               child: Column(
-                // THIS IS THE KEY: Aligns the logo, text, and fields to the left
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 60),
-
-                  // Logo Section
-                  Center( // Wrap only the logo in Center to keep it in the middle
-                    child: Image.asset('assets/logo.png', height: 120),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Tagline
-                  const Text(
-                    'Swipe, chat, train',
-                    style: TextStyle(fontFamily: 'IstokWeb', color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const Text(
-                    'Your Fitness Buddy, Just a Tap Away...',
-                    style: TextStyle(fontFamily: 'IstokWeb', color: Color.fromARGB(255, 255, 255, 255), fontSize: 14),
-                  ),
-
                   const SizedBox(height: 50),
-
-                  // "ARE YOU READY" - centered manually
-                  const Center(
-                    child: Text(
-                      "ARE YOU READY?",
-                      style: TextStyle(fontFamily: 'Jura', color: Colors.white, fontSize: 18),
-                    ),
-                  ),
+                  Center(child: Image.asset('assets/logo.png', height: 100)), // Restored original size
+                  const SizedBox(height: 20),
+                  const Text('Swipe, chat, train', 
+                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  const Text('Your Fitness Buddy...', 
+                    style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  const SizedBox(height: 50),
+                  const Center(child: Text("ARE YOU READY?", 
+                    style: TextStyle(color: Colors.white, fontSize: 18))),
                   const SizedBox(height: 30),
 
-                  // Input Fields
-                  _buildField(context, "Email", "email@email.com", controller: _emailCtrl, validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Enter email';
-                    return null;
-                  }),
+                  _buildField("Email", "admin@fitlinkr.gr", _emailController),
                   const SizedBox(height: 25),
-                  _buildField(context, "Password", "password", isPass: true, controller: _passCtrl, validator: (v) {
-                    if (v == null || v.isEmpty) return 'Enter password';
-                    return null;
-                  }),
+                  _buildField("Password", "******", _passwordController, isPass: true),
 
-                  const SizedBox(height: 40),
+                  // RESTORED Forgot Password Button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                        );
+                      },
+                      child: const Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 244, 67, 54), 
+                          decoration: TextDecoration.underline
+                        ),
+                      ),
+                    ),
+                  ),
 
-                  // Buttons - centered manually
+                  const SizedBox(height: 30),
                   Center(
                     child: Column(
                       children: [
                         ElevatedButton(
-                          onPressed: _loading ? null : _login,
+                          onPressed: _isLoading ? null : _handleLogin, 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.red,
                             shape: const StadiumBorder(),
                             padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
                           ),
-                          child: _loading ? const CircularProgressIndicator() : const Text('LOGIN', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text('I forgot my password!!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          child: _isLoading 
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.red, strokeWidth: 2))
+                            : const Text('LOGIN', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(height: 40),
                         const Text("You do not have an account?", style: TextStyle(color: Colors.white)),
                         const SizedBox(height: 10),
                         OutlinedButton(
                           onPressed: () {
-                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterPage()));    
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const RegisterPage()),
+                            );
                           },
                           style: OutlinedButton.styleFrom(
                             shape: const StadiumBorder(),
@@ -160,30 +183,27 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildField(BuildContext context, String label, String hint, {bool isPass = false, TextEditingController? controller, String? Function(String?)? validator}) {
+  // Restored your original _buildField style but added the controller
+  Widget _buildField(String label, String hint, TextEditingController controller, {bool isPass = false}) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, 
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+        Text(label, style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        TextFormField(
+        TextFormField( // Changed to TextFormField for validation support
           controller: controller,
           obscureText: isPass,
-          validator: validator,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: const TextStyle(color: Colors.black, fontSize: 15),
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Please fill this field';
+            return null;
+          },
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFFD9D9D9), // Light grey background
+            fillColor: const Color(0xFFD9D9D9),
             hintText: hint,
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
             contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15), // Softer rounded corners
-              borderSide: BorderSide.none,
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           ),
         ),
       ],
