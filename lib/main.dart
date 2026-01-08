@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bcrypt/bcrypt.dart';
 
 import 'models/tester.dart';
+import 'ui/login_page.dart'; 
 import 'app.dart'; 
 
 Future<void> main() async {
@@ -24,6 +25,7 @@ Future<void> main() async {
         interests: 'Gym',
         age: 29,
         level: 'Expert',
+        gender: 'Male'
       ),
       Tester(
         name: 'Sara',
@@ -33,6 +35,7 @@ Future<void> main() async {
         interests: 'Yoga',
         age: 25,
         level: 'Beginner',
+        gender: 'Female'
       ),
       Tester(
         name: 'Amir',
@@ -42,6 +45,7 @@ Future<void> main() async {
         interests: 'Running',
         age: 31,
         level: 'Intermediate',
+        gender: 'Other'
       ),
     ];
     for (final t in testers) {
@@ -50,4 +54,20 @@ Future<void> main() async {
   }
 
   runApp(const FitLinkrApp());
+}
+class FitLinkrApp extends StatelessWidget {
+  const FitLinkrApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'FitLinkr',
+      theme: ThemeData(
+        fontFamily: 'IstokWeb', 
+        scaffoldBackgroundColor: const Color(0xFF1A0505), 
+      ),
+      home: const LoginPage(),
+    );
+  }
 }
