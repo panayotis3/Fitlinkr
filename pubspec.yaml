@@ -38,6 +38,7 @@ flutter:
     - assets/friend_icon.png
     - assets/swolemate_icon.png
     - assets/verify_completed.png
+    - assets/Heart_Background.png
 
 
   fonts:
