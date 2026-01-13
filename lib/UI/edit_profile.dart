@@ -53,26 +53,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _age = widget.tester.age.toString();
     _level = widget.tester.level;
     _gender = widget.tester.gender;
-    _loadAvatar();
-  }
-
-  Future<void> _loadAvatar() async {
-    final box = await Hive.openBox<String>('avatars');
-    final path = box.get(widget.tester.email);
-    if (mounted) {
-      setState(() {
-        _avatarPath = path;
-      });
-    }
+    _avatarPath = widget.tester.profilePicture;
   }
 
   Future<void> _setAvatarPath(String? path) async {
-    final box = await Hive.openBox<String>('avatars');
-    if (path == null) {
-      await box.delete(widget.tester.email);
-    } else {
-      await box.put(widget.tester.email, path);
-    }
     if (mounted) {
       setState(() {
         _avatarPath = path;
@@ -143,6 +127,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       age: int.tryParse(age) ?? widget.tester.age,
       level: level,
       gender: gender,
+      profilePicture: _avatarPath,
+      likedBy: widget.tester.likedBy,
     );
 
     if (key != null) {
@@ -362,19 +348,124 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     }
                                   }
                                 },
-                                color: const Color(0xFF2A0A0A),
-                                itemBuilder: (context) => const [
+                                offset: const Offset(-120, 30),
+                                color: Colors.grey[300],
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                itemBuilder: (context) => [
                                   PopupMenuItem(
                                     value: 'take',
-                                    child: Text('Take a picture'),
+                                    padding: EdgeInsets.zero,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).pop();
+                                        _picker.pickImage(source: ImageSource.camera).then((picked) async {
+                                          if (picked != null) {
+                                            final savedPath = await _saveImageToAppDir(picked);
+                                            await _setAvatarPath(savedPath);
+                                            setModalState(() {
+                                              avatarImage = FileImage(File(savedPath));
+                                            });
+                                          }
+                                        }).catchError((e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Error: ${e.toString()}')),
+                                            );
+                                          }
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 220,
+                                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[400],
+                                          borderRadius: BorderRadius.circular(25),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: const [
+                                            Icon(Icons.camera_alt_outlined, color: Colors.red, size: 24),
+                                            SizedBox(width: 12),
+                                            Text('Take photo', style: TextStyle(color: Colors.black, fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 16)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                   PopupMenuItem(
                                     value: 'upload',
-                                    child: Text('Upload a picture'),
+                                    padding: EdgeInsets.zero,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).pop();
+                                        _picker.pickImage(source: ImageSource.gallery).then((picked) async {
+                                          if (picked != null) {
+                                            final savedPath = await _saveImageToAppDir(picked);
+                                            await _setAvatarPath(savedPath);
+                                            setModalState(() {
+                                              avatarImage = FileImage(File(savedPath));
+                                            });
+                                          }
+                                        }).catchError((e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Error: ${e.toString()}')),
+                                            );
+                                          }
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 220,
+                                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[400],
+                                          borderRadius: BorderRadius.circular(25),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: const [
+                                            Icon(Icons.photo_size_select_actual_outlined, color: Colors.red, size: 24),
+                                            SizedBox(width: 12),
+                                            Text('Choose from Gallery', style: TextStyle(color: Colors.black, fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 16)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                   PopupMenuItem(
                                     value: 'remove',
-                                    child: Text('Remove photo'),
+                                    padding: EdgeInsets.zero,
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        Navigator.of(context).pop();
+                                        await _setAvatarPath(null);
+                                        setModalState(() {
+                                          avatarImage = null;
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 220,
+                                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[400],
+                                          borderRadius: BorderRadius.circular(25),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: const [
+                                            Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
+                                            SizedBox(width: 12),
+                                            Text('Remove Photo', style: TextStyle(color: Colors.black, fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 16)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                                 child: CircleAvatar(
@@ -659,7 +750,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Column(
             children: [
               _buildHeader(),
-              const Divider(color: Colors.red, thickness: 2),
+              const Divider(color: Colors.red, thickness: 2, height: 2),
             ],
           ),
           _buildProfileCard(context),
@@ -686,7 +777,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildProfileCard(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF2A0A0A),
         borderRadius: BorderRadius.circular(16),
@@ -697,26 +788,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Column(
             children: [
               CircleAvatar(
-                radius: 40,
+                radius: 35,
                 foregroundImage: _avatarPath != null
                     ? FileImage(File(_avatarPath!))
                     : null,
                 child: _avatarPath == null
-                    ? Icon(Icons.person, color: Colors.grey[700], size: 50)
+                    ? Icon(Icons.person, color: Colors.grey[700], size: 40)
                     : null,
               ),
-
               Padding(
-                padding: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.only(top: 8),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                      horizontal: 10,
+                      vertical: 6,
                     ),
-                    minimumSize: const Size(0, 32),
+                    minimumSize: const Size(0, 28),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -731,13 +821,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   },
                   child: const Text(
                     'SIGN OUT',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -745,85 +835,105 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Name: $_name',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Country: $_country',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Interests: $_interests',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Name: $_name',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Age: $_age',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-                          Text(
-                            'Level: $_level',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 5),
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: _openEditModal,
-                              child: const Text('Edit Profile', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Age: $_age',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Country: $_country',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Level: $_level',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Interests: $_interests',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Email: ${widget.tester.email}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _openEditModal,
+                    child: const Text('Edit Account Details\nand Change Profile Picture', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ),
               ],
             ),
           ),
@@ -878,7 +988,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             });
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const SwipePage(mode: 'Professional'),
+                builder: (ctx) => SwipePage(mode: 'Professional', currentUserEmail: widget.tester.email),
               ),
             );
           },
@@ -898,7 +1008,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             });
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const SwipePage(mode: 'Learner'),
+                builder: (ctx) => SwipePage(mode: 'Learner', currentUserEmail: widget.tester.email),
               ),
             );
           },
@@ -918,7 +1028,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             });
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const SwipePage(mode: 'Friend'),
+                builder: (ctx) => SwipePage(mode: 'Friend', currentUserEmail: widget.tester.email),
               ),
             );
           },
@@ -938,7 +1048,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             });
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const SwipePage(mode: 'Swole-mate'),
+                builder: (ctx) => SwipePage(mode: 'Swole-mate', currentUserEmail: widget.tester.email),
               ),
             );
           },

@@ -58,42 +58,37 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
       ),
     );
   }
-
-  Widget _getModeButton() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => EditProfilePage(tester: widget.tester)), // 4. Passed tester here
-        );
-      },
-      child: Image.asset(
-        'assets/${widget.userMode}_icon.png', 
-        height: 45,
-        errorBuilder: (context, error, stackTrace) => const CircleAvatar(child: Icon(Icons.person)),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1A0505),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false, 
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SafeArea(
+        child: Column(
           children: [
-            Image.asset('assets/logo.png', height: 40), 
-            _getModeButton(), 
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Image.asset('assets/logo.png', height: 60),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Image.asset('assets/professional_icon.png', height: 60),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.red, thickness: 2, height: 2),
+            Expanded(
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator(color: Colors.blue)) 
+                : (_isSubmitted ? _buildThankYouView() : _buildUploadView()),
+            ),
           ],
         ),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Colors.blue)) 
-        : (_isSubmitted ? _buildThankYouView() : _buildUploadView()),
     );
   }
 
