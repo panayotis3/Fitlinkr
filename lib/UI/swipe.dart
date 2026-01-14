@@ -222,19 +222,37 @@ class _SwipePageState extends State<SwipePage> {
       final box = await Hive.openBox<Tester>('testers_v2');
       print('Total users in box: ${box.length}');
       
-      final allUsers = box.values.where((user) => 
+      var allUsers = box.values.where((user) => 
         user.email.toLowerCase() != widget.currentUserEmail.toLowerCase()
       ).toList();
       
       print('Users after filtering current user: ${allUsers.length}');
+      
+      // If in Learner mode, only show verified professionals
+      if (widget.mode.toLowerCase() == 'learner') {
+        allUsers = allUsers.where((user) => user.isProfessionalVerified).toList();
+        print('Learner mode: Filtered to verified professionals only: ${allUsers.length}');
+      }
 
       final currentUser = box.values.firstWhere(
         (u) => u.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),
         orElse: () => Tester(name: '', email: '', passwordHash: '', country: '', interests: '', age: 0, level: '', gender: ''),
       );
+      
+      // Determine which mode to check for likes based on current mode
+      // Learners see Professionals who liked them, and vice versa
+      String modeToCheck;
+      if (widget.mode.toLowerCase() == 'learner') {
+        modeToCheck = 'Professional';
+      } else if (widget.mode.toLowerCase() == 'professional') {
+        modeToCheck = 'Learner';
+      } else {
+        modeToCheck = widget.mode;
+      }
+      
       final likedByMap = currentUser.likedBy ?? {};
-      final whoLikedMe = likedByMap[widget.mode] ?? [];
-      print('Current user (${widget.currentUserEmail}) was liked by in ${widget.mode} mode: $whoLikedMe');
+      final whoLikedMe = likedByMap[modeToCheck] ?? [];
+      print('Current user (${widget.currentUserEmail}) in ${widget.mode} mode checking likes from $modeToCheck mode: $whoLikedMe');
 
       // Separate users who liked you and others
       final usersWhoLikedYou = <Tester>[];
@@ -620,6 +638,7 @@ class _SwipePageState extends State<SwipePage> {
             level: likedUser.level,
             gender: likedUser.gender,
             likedBy: currentLikedByMap,
+            isProfessionalVerified: likedUser.isProfessionalVerified,
           );
 
           await box.put(userKey, updatedUser);

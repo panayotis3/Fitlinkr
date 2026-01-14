@@ -13,6 +13,7 @@ class Tester {
   final String gender;
   final String? profilePicture;
   final Map<String, List<String>>? likedBy; // mode -> list of emails who liked in that mode
+  final bool isProfessionalVerified; // Track if user is verified as a professional
 
   Tester({
     required this.name,
@@ -25,6 +26,7 @@ class Tester {
     required this.gender,
     this.profilePicture,
     this.likedBy,
+    this.isProfessionalVerified = false,
   });
 
   @override
@@ -64,6 +66,7 @@ class TesterAdapter extends TypeAdapter<Tester> {
     
     // Try to read likedBy - new format is Map<String, List<String>>
     Map<String, List<String>>? likedBy;
+    bool isProfessionalVerified = false;
     try {
       if (reader.availableBytes >= 4) {
         final mapLength = reader.readInt();
@@ -83,7 +86,16 @@ class TesterAdapter extends TypeAdapter<Tester> {
       likedBy = null;
     }
     
-    return Tester(name: name, email: email, passwordHash: passwordHash, country: country, interests: interests, age: age, level: level, gender: gender, profilePicture: profilePicture, likedBy: likedBy,);
+    // Try to read isProfessionalVerified
+    try {
+      if (reader.availableBytes > 0) {
+        isProfessionalVerified = reader.readBool();
+      }
+    } catch (e) {
+      isProfessionalVerified = false;
+    }
+    
+    return Tester(name: name, email: email, passwordHash: passwordHash, country: country, interests: interests, age: age, level: level, gender: gender, profilePicture: profilePicture, likedBy: likedBy, isProfessionalVerified: isProfessionalVerified,);
   }
 
   @override
@@ -113,5 +125,8 @@ class TesterAdapter extends TypeAdapter<Tester> {
         writer.writeString(email);
       }
     });
+    
+    // Write isProfessionalVerified
+    writer.writeBool(obj.isProfessionalVerified);
   }
 }

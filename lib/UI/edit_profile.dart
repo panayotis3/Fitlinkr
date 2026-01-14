@@ -30,6 +30,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _gender = 'Prefer not to say';
   String? _avatarPath;
   String _currentMode = 'friend';
+  bool _isProfessionalVerified = false;
   Image _modeIcon(String mode) {
     switch (mode) {
       case 'professional':
@@ -54,6 +55,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _level = widget.tester.level;
     _gender = widget.tester.gender;
     _avatarPath = widget.tester.profilePicture;
+    _isProfessionalVerified = widget.tester.isProfessionalVerified;
   }
 
   Future<void> _setAvatarPath(String? path) async {
@@ -129,6 +131,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       gender: gender,
       profilePicture: _avatarPath,
       likedBy: widget.tester.likedBy,
+      isProfessionalVerified: widget.tester.isProfessionalVerified,
     );
 
     if (key != null) {
@@ -754,7 +757,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ],
           ),
           _buildProfileCard(context),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _buildModeSelection(),
         ],
       ),
@@ -774,164 +777,144 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  Widget _buildInfoRow(String label, String value, {int maxLines = 1}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 70,
+          child: Text(
+            '$label:',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: maxLines,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildProfileCard(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF2A0A0A),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Column(
             children: [
-              CircleAvatar(
-                radius: 35,
-                foregroundImage: _avatarPath != null
-                    ? FileImage(File(_avatarPath!))
-                    : null,
-                child: _avatarPath == null
-                    ? Icon(Icons.person, color: Colors.grey[700], size: 40)
-                    : null,
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.red, width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 53,
+                  backgroundColor: Colors.grey[800],
+                  foregroundImage: _avatarPath != null
+                      ? FileImage(File(_avatarPath!))
+                      : null,
+                  child: _avatarPath == null
+                      ? Icon(Icons.person, color: Colors.grey[600], size: 57)
+                      : null,
+                ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    minimumSize: const Size(0, 28),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginPage(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'SIGN OUT',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+                  minimumSize: const Size(85, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 2,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginPage(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'SIGN OUT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Inter',
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Name: $_name',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Age: $_age',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Country: $_country',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Level: $_level',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Interests: $_interests',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Email: ${widget.tester.email}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Center(
+                _buildInfoRow('Name', _name),
+                const SizedBox(height: 8),
+                _buildInfoRow('Age', _age),
+                const SizedBox(height: 8),
+                _buildInfoRow('Level', _level),
+                const SizedBox(height: 8),
+                _buildInfoRow('Interests', _interests, maxLines: 2),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.redAccent,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      elevation: 2,
                     ),
                     onPressed: _openEditModal,
-                    child: const Text('Edit Account Details\nand Change Profile Picture', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 14)),
+                    child: const Text(
+                      'Edit Account Details',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -971,7 +954,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             fit: BoxFit.cover,
           ),
           Colors.blue,
-          onRight: () {
+          isLocked: !_isProfessionalVerified,
+          isVerified: _isProfessionalVerified,
+          onRight: _isProfessionalVerified ? null : () {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (ctx) =>
@@ -982,7 +967,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             );
           },
-          onTap: () {
+          onTap: _isProfessionalVerified ? () {
             setState(() {
               _currentMode = 'professional';
             });
@@ -991,7 +976,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 builder: (ctx) => SwipePage(mode: 'Professional', currentUserEmail: widget.tester.email),
               ),
             );
-          },
+          } : null,
         ),
         _modeTile(
           'Learner',
@@ -1061,35 +1046,53 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String title,
     Image icon,
     Color color, {
+    bool isLocked = false,
+    bool isVerified = false,
     VoidCallback? onRight,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLocked ? null : onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF2A0A0A),
+          color: isLocked ? const Color(0xFF1A0A0A) : const Color(0xFF2A0A0A),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [
-            SizedBox(width: 40, height: 40, child: ClipOval(child: icon)),
+            Opacity(
+              opacity: isLocked ? 0.5 : 1.0,
+              child: SizedBox(width: 40, height: 40, child: ClipOval(child: icon)),
+            ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'Inter', fontWeight: FontWeight.bold),
+              child: Row(
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isLocked ? Colors.white60 : Colors.white,
+                      fontSize: 18,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (isLocked) ...[
+                    const SizedBox(width: 8),
+                    const Icon(Icons.lock, color: Colors.white60, size: 20),
+                  ],
+                ],
               ),
             ),
-            if (onRight != null)
+            if (onRight != null || isVerified)
               Padding(
                 padding: const EdgeInsets.only(left: 12.0),
                 child: OutlinedButton(
                   onPressed: onRight,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF1E88E5)),
+                    side: BorderSide(color: isVerified ? Colors.green : const Color(0xFF1E88E5)),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 10,
@@ -1097,14 +1100,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    backgroundColor: Colors.blue[600],
+                    backgroundColor: isVerified ? Colors.green : Colors.blue[600],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text('VERIFY', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-                      SizedBox(width: 8),
-                      Icon(Icons.check, color: Colors.white, size: 18),
+                    children: [
+                      Text(
+                        isVerified ? 'VERIFIED' : 'VERIFY',
+                        style: const TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(isVerified ? Icons.check_circle : Icons.check, color: Colors.white, size: 18),
                     ],
                   ),
                 ),
