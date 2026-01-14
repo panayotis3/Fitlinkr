@@ -91,61 +91,32 @@ class _ChatListPageState extends State<ChatListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A0505),
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: const Color(0xFF1A0505),
+      body: SafeArea(
+        child: Column(
           children: [
-            Image.asset('assets/logo.png', height: 40),
-            
-            // Κουμπί Profile
-            GestureDetector(
-              onTap: () {
-                if (_currentUser != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditProfilePage(tester: _currentUser!),
-                    ),
-                  ).then((_) => _loadData()); 
-                }
-              },
+            _buildHeader(),
+            const Divider(color: Colors.red, thickness: 2, height: 2),
+            Expanded(
               child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _theme.primaryColor, 
-                ),
-                child: SizedBox(
-                  height: 30, 
-                  width: 30, 
-                  child: _theme.icon,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 20, top: 20, bottom: 10),
-            child: Text(
-              "Matches", // Το άλλαξα σε Matches
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 24, 
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-          ),
-          
-          const Divider(thickness: 1, color: Colors.grey),
+                color: Colors.white,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(left: 20, top: 20, bottom: 10),
+                      child: Text(
+                        "Matches",
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 24, 
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    
+                    const Divider(thickness: 1, color: Colors.grey),
 
           Expanded(
             child: _isLoading 
@@ -165,7 +136,12 @@ class _ChatListPageState extends State<ChatListPage> {
                       },
                     ),
           ),
-        ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       
       floatingActionButton: SizedBox(
@@ -196,6 +172,31 @@ class _ChatListPageState extends State<ChatListPage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Image.asset('assets/logo.png', height: 60),
+          GestureDetector(
+            onTap: () {
+              if (_currentUser != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfilePage(tester: _currentUser!),
+                  ),
+                ).then((_) => _loadData());
+              }
+            },
+            child: _theme.icon,
+          ),
+        ],
+      ),
     );
   }
 

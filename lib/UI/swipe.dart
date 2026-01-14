@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
-import 'chat_list_page.dart'
+import 'chat_list_page.dart';
 
 
 class ModeTheme {
@@ -592,8 +592,9 @@ class _SwipePageState extends State<SwipePage> {
   }
 
   void _animateCardOffScreen(String direction) async {
+    bool isMatch = false;
     if (direction == 'right' && _currentIndex < _accounts.length) {
-      await _saveLike(_accounts[_currentIndex]['email']!);
+      isMatch = await _saveLike(_accounts[_currentIndex]['email']!);
     }
     
     setState(() {
@@ -601,16 +602,38 @@ class _SwipePageState extends State<SwipePage> {
       _dragOffset = Offset.zero;
     });
     
-    // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(direction == 'right' ? 'Liked!' : 'Passed'),
-        duration: const Duration(milliseconds: 500),
-      ),
-    );
+    if (isMatch) {
+      // It's a match! Navigate to chat list page
+      // ignore: use_build_context_synchronously
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatListPage(
+            currentUserEmail: widget.currentUserEmail,
+            mode: widget.mode,
+          ),
+        ),
+      );
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('It\'s a Match! 🎉'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(direction == 'right' ? 'Liked!' : 'Passed'),
+          duration: const Duration(milliseconds: 500),
+        ),
+      );
+    }
   }
 
-  Future<void> _saveLike(String likedUserEmail) async {
+  Future<bool> _saveLike(String likedUserEmail) async {
     try {
       final box = await Hive.openBox<Tester>('testers_v2');
       
@@ -643,11 +666,32 @@ class _SwipePageState extends State<SwipePage> {
           );
 
           await box.put(userKey, updatedUser);
+          
+          // Check if it's a mutual match
+          // Get the current user
+          final currentUserKey = box.keys.firstWhere((key) {
+            final user = box.get(key);
+            return user != null && user.email.toLowerCase() == widget.currentUserEmail.toLowerCase();
+          }, orElse: () => null);
+          
+          if (currentUserKey != null) {
+            final currentUser = box.get(currentUserKey);
+            if (currentUser != null) {
+              final myLikedByMap = currentUser.likedBy ?? {};
+              final peopleWhoLikedMe = myLikedByMap[widget.mode] ?? [];
+              
+              // If the person I just liked has also liked me, it's a match!
+              if (peopleWhoLikedMe.contains(likedUserEmail.toLowerCase())) {
+                return true; // It's a match!
+              }
+            }
+          }
         }
       }
     } catch (e) {
       print('Error saving like: $e');
     }
+    return false; // Not a match
   }
 
   @override
