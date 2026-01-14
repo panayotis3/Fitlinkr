@@ -1,6 +1,6 @@
 {
-    "name": "fitlinkr",
-    "short_name": "fitlinkr",
+    "name": "FitLinkr",
+    "short_name": "FitLinkr",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
