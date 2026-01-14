@@ -27,12 +27,15 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   hive_generator: ^2.0.0
   build_runner: ^2.4.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/logo.png
+    - assets/logo_icon.png
     - assets/professional_icon.png 
     - assets/learner_icon.png
     - assets/friend_icon.png
@@ -53,3 +56,18 @@ flutter:
     - family: Inter
       fonts:
         - asset: fonts/Inter-Italic-VariableFont_opsz,wght.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo_icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#210005"
+  adaptive_icon_foreground: "assets/logo_icon.png"
+
+flutter_native_splash:
+  color: "#210005"
+  image: assets/logo_icon.png
+  android: true
+  ios: true
+  fullscreen: true

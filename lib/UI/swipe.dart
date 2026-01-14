@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
 
-// Mode Theme Configuration
+
 class ModeTheme {
   final String mode;
 
@@ -166,13 +166,13 @@ class _SwipePageState extends State<SwipePage> {
   int _currentIndex = 0;
   late ModeTheme _theme;
 
-  // Filter state
+  // filtra
   String _fitnessLevel = 'Any';
   String _country = 'Any';
   String _gender = 'Any';
   Set<String> _selectedInterests = {};
 
-  // User accounts from Hive
+  // travame ta acc apo hive
   List<Map<String, String>> _accounts = [];
   List<Map<String, String>> _allAccounts = [];
 
