@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
+import 'chat_list_page.dart'
 
 
 class ModeTheme {
@@ -856,7 +857,17 @@ class _SwipePageState extends State<SwipePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () => print("Chat button pressed"),
+              onPressed: () { //allagh
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatListPage(
+                      currentUserEmail: widget.currentUserEmail, // Στέλνουμε το email
+                      mode: widget.mode,
+                    ),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _theme.chatButtonBackgroundColor,
                 side: BorderSide(color: _theme.chatButtonColor, width: 2),
