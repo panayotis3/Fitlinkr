@@ -245,6 +245,14 @@ class _SwipePageState extends State<SwipePage> {
         allUsers = allUsers.where((user) => user.isProfessionalVerified).toList();
         debugPrint('Learner mode: Filtered to verified professionals only: ${allUsers.length}');
       }
+      //  Φιλτράρισμα χρηστών που έχουμε ηδη κάνει like για να μην εμφανιζονται ξανα
+      allUsers = allUsers.where((user) {
+        final likedByMap = user.likedBy ?? {};
+        final likesInCurrentMode = likedByMap[widget.mode] ?? [];
+        // Αν το email μας είναι στη λίστα 'likedBy' του άλλου, σημαίνει πως του κάναμε ήδη like.
+        // Επιστρέφουμε false για να τον αφαιρέσουμε από τη λίστα προτεινόμενων.
+        return !likesInCurrentMode.contains(widget.currentUserEmail.toLowerCase());
+      }).toList();
 
       final currentUser = box.values.firstWhere(
         (u) => u.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),

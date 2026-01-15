@@ -17,6 +17,37 @@ Future<void> main() async {
   if (box.isEmpty) {
     final testers = [
       Tester(
+        name: 'Popi',
+        email: 'popi@example.com',
+        passwordHash: BCrypt.hashpw('popi123', BCrypt.gensalt()),
+        country: 'Greece',
+        interests: 'Gym',
+        age: 29,
+        level: 'Expert',
+        gender: 'female',
+        isProfessionalVerified: true,
+      ),
+      Tester(
+        name: 'Kiki',
+        email: 'kiki@example.com',
+        passwordHash: BCrypt.hashpw('kiki123', BCrypt.gensalt()),
+        country: 'Greece',
+        interests: 'Gym',
+        age: 29,
+        level: 'Expert',
+        gender: 'Female'
+      ),
+      Tester(
+        name: 'petros',
+        email: 'petros@example.com',
+        passwordHash: BCrypt.hashpw('petros123', BCrypt.gensalt()),
+        country: 'Greece',
+        interests: 'Gym',
+        age: 29,
+        level: 'Expert',
+        gender: 'Male'
+      ),
+      Tester(
         name: 'Nikos',
         email: 'nikos@example.com',
         passwordHash: BCrypt.hashpw('password123', BCrypt.gensalt()),
