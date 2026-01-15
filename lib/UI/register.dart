@@ -12,6 +12,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   final TextEditingController _confirmPassController = TextEditingController();
@@ -24,9 +25,46 @@ class _RegisterPageState extends State<RegisterPage> {
   String? selectedGender;
 
   //  Λίστες Επιλογών
-  final List<String> countries = ['Greece', 'USA', 'UK', 'Germany', 'France'];
-  // Φρόντισα τα interests να ταιριάζουν με αυτά που έχεις στο main.dart (αν χρειάζεται)
-  final List<String> interests = ['Gym', 'Yoga', 'Running', 'Crossfit']; 
+  final List<String> countries = ['United States',
+      'United Kingdom',
+      'Canada',
+      'Australia',
+      'Germany',
+      'France',
+      'Spain',
+      'Italy',
+      'Greece',
+      'Netherlands',
+      'Belgium',
+      'Switzerland',
+      'Austria',
+      'Portugal',
+      'Sweden',
+      'Norway',
+      'Denmark',
+      'Finland',
+      'Poland',
+      'Ireland',
+      'Japan',
+      'South Korea',
+      'China',
+      'India',
+      'Brazil',
+      'Mexico',
+      'Argentina',
+      'Chile',
+      'New Zealand',
+      'South Africa',];
+  final List<String> interests = ['Gym',
+      'Yoga',
+      'Running',
+      'Cycling',
+      'Swimming',
+      'Hiking',
+      'Water Polo',
+      'Boxing',
+      'Football',
+      'Basketball',]; 
   final List<String> levels = ['Beginner', 'Intermediate', 'Expert'];
   final List<String> genders = ['Male', 'Female', 'Other'];
 
@@ -34,6 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     _nameController.dispose();
+     _ageController.dispose();
     _emailController.dispose();
     _passController.dispose();
     _confirmPassController.dispose();
@@ -48,12 +87,29 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       return;
     }
-
+    //ελεγχος για κενα πεδια
     if (_nameController.text.isEmpty || 
+        _ageController.text.isEmpty ||
         _emailController.text.isEmpty || 
         selectedCountry == null || selectedGender == null|| selectedInterests.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all required fields")),
+      );
+      return;
+    }
+    // ελεγχος εγκυρότητας ηλικίας (0-120)
+    int? ageInput = int.tryParse(_ageController.text);
+    if (ageInput == null || ageInput < 0 || ageInput > 120) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a valid age (0-120)")),
+      );
+      return;
+    }
+    // ελεγχος μορφής Email 
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(_emailController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a valid email address")),
       );
       return;
     }
@@ -126,9 +182,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 width: 350,
                 child: SingleChildScrollView(
                   child: SizedBox(
-                    height: MediaQuery.of(context).size.height > 750 
+                    height: MediaQuery.of(context).size.height > 850 
                         ? MediaQuery.of(context).size.height - 80 
-                        : 750,
+                        : 850,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -150,6 +206,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           children: [
                             _buildLabel("Name (* required field)"),
                             _buildTextField("Name", _nameController),
+
+                            _buildLabel("Age", isRequired: true),
+                            _buildTextField("Age (0-120)", _ageController, isNumber: true),
+
 
                             _buildLabel("Email", isRequired: true),
                             _buildTextField("email@email.com", _emailController),
@@ -256,7 +316,7 @@ class _RegisterPageState extends State<RegisterPage> {
               text: "*",
               style: const TextStyle(fontFamily: 'IstokWeb', color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14),
               children: [
-                // ignore: prefer_interpolation_to_compose_strings
+                
                 TextSpan(text: parts[0] + "(", style: const TextStyle(color: Colors.white)),
                 const TextSpan(text: "*", style: TextStyle(color: Colors.red)),
                 TextSpan(text: parts[1], style: const TextStyle(color: Colors.white)),
@@ -293,6 +353,7 @@ class _RegisterPageState extends State<RegisterPage> {
       child: TextField(
         controller: controller,
         obscureText: isPass,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         style: const TextStyle(fontFamily: 'IstokWeb', color: Colors.black, fontSize: 13),
         decoration: InputDecoration(
           filled: true,
@@ -328,7 +389,7 @@ class _RegisterPageState extends State<RegisterPage> {
           hint: Text(hint, style: TextStyle(fontFamily: 'IstokWeb', color: Colors.grey[600], fontSize: 13)),
           isExpanded: true,
           dropdownColor: const Color(0xFFD9D9D9),
-          borderRadius: BorderRadius.circular(20), // Στρογγυλεμένη λίστα
+          borderRadius: BorderRadius.circular(20), 
           icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
           items: items.map((String item) {
             return DropdownMenuItem<String>(
@@ -373,7 +434,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   fontFamily: 'IstokWeb',
                   color: selectedItems.isEmpty ? Colors.grey[600] : Colors.black,
                   fontSize: 13,
-                  overflow: TextOverflow.ellipsis, // Αν είναι πολλά, βάζει ...
+                  overflow: TextOverflow.ellipsis, 
                 ),
               ),
             ),
@@ -436,3 +497,4 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
+
