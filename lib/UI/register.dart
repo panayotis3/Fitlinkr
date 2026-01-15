@@ -97,11 +97,11 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       return;
     }
-    // ελεγχος εγκυρότητας ηλικίας (0-120)
+    // ελεγχος εγκυρότητας ηλικίας (18-120)
     int? ageInput = int.tryParse(_ageController.text);
-    if (ageInput == null || ageInput < 0 || ageInput > 120) {
+    if (ageInput == null || ageInput < 18 || ageInput > 120) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a valid age (0-120)")),
+        const SnackBar(content: Text("Please enter a valid age (18+)")),
       );
       return;
     }
@@ -135,7 +135,7 @@ class _RegisterPageState extends State<RegisterPage> {
       passwordHash: hashedPassword,
       country: selectedCountry!,
       interests: selectedInterests.join(', '),
-      age: 25, 
+      age: ageInput, 
       level: selectedLevel ?? 'Beginner',
       gender: selectedGender!,
     );
@@ -208,7 +208,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             _buildTextField("Name", _nameController),
 
                             _buildLabel("Age", isRequired: true),
-                            _buildTextField("Age (0-120)", _ageController, isNumber: true),
+                            _buildTextField("Age (18+)", _ageController, isNumber: true),
 
 
                             _buildLabel("Email", isRequired: true),
@@ -347,7 +347,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller, {bool isPass = false}) {
+  Widget _buildTextField(String hint, TextEditingController controller, {bool isPass = false, bool isNumber = false}) {
     return SizedBox(
       height: 35,
       child: TextField(
