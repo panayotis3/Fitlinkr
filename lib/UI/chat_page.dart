@@ -9,13 +9,17 @@ import '../models/tester.dart';
 class ChatPage extends StatefulWidget {
   final String userMode;
   final Tester currentUser;
-  final Tester otherUser;
+  final Tester? otherUser;
+  final bool isGroup;
+  final Map<String, dynamic>? groupData;
 
   const ChatPage({
     super.key,
     required this.userMode,
     required this.currentUser,
-    required this.otherUser,
+    this.otherUser,
+    this.isGroup = false,
+    this.groupData,
   });
 
   @override
@@ -35,12 +39,20 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _openChatBox() async {
-    List<String> emails = [widget.currentUser.email, widget.otherUser.email];
-    emails.sort();
+    String chatId;
     
-    String emailsPart = emails.join('_').replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
-    String modePart = widget.userMode.toLowerCase().replaceAll('-', '');
-    String chatId = 'chat_${modePart}_$emailsPart';
+    if (widget.isGroup) {
+      // For groups, use the group ID
+      String groupId = widget.groupData?['id'] ?? 'unknown';
+      chatId = 'group_chat_$groupId';
+    } else {
+      // For individual chats, use sorted emails
+      List<String> emails = [widget.currentUser.email, widget.otherUser!.email];
+      emails.sort();
+      String emailsPart = emails.join('_').replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
+      String modePart = widget.userMode.toLowerCase().replaceAll('-', '');
+      chatId = 'chat_${modePart}_$emailsPart';
+    }
 
     _chatBox = await Hive.openBox(chatId);
     _markMessagesAsSeen();
@@ -71,8 +83,10 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  // ΛΕΙΤΟΥΡΓΙΑ 2: BLOCK & UNMATCH (ΔΙΑΓΡΑΦΕΙ ΤΟ MATCH)
+  // ΛΕΙΤΟΥΡΓΙΑ 2: BLOCK & UNMATCH (ΔΙΑΓΡΑΦΕΙ ΤΟ MATCH) - Only for individual chats
   Future<void> _blockAndDeleteEverything() async {
+    if (widget.isGroup || widget.otherUser == null) return;
+    
     try {
       await _chatBox?.clear();
       final userBox = Hive.box<Tester>('testers_v2');
@@ -85,7 +99,7 @@ class _ChatPageState extends State<ChatPage> {
         Map<String, List<String>> updatedLikedBy = Map.from(myUser.likedBy ?? {});
         List<String> modeLikes = List.from(updatedLikedBy[widget.userMode] ?? []);
 
-        modeLikes.removeWhere((email) => email.toLowerCase() == widget.otherUser.email.toLowerCase());
+        modeLikes.removeWhere((email) => email.toLowerCase() == widget.otherUser!.email.toLowerCase());
         updatedLikedBy[widget.userMode] = modeLikes;
         
         final updatedUser = Tester(
@@ -107,7 +121,7 @@ class _ChatPageState extends State<ChatPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User blocked and unmatched')));
-        Navigator.pop(context); // Επιστροφή στη λίστα (ο χρήστης θα εξαφανιστεί)
+        Navigator.pop(context);
       }
     } catch (e) {
       debugPrint("Block error: $e");
@@ -115,6 +129,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _showOtherUserProfile() {
+    if (widget.isGroup) {
+      _showGroupSettings();
+      return;
+    }
+    
+    if (widget.otherUser == null) return;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -129,20 +150,59 @@ class _ChatPageState extends State<ChatPage> {
               const SizedBox(height: 10),
               CircleAvatar(
                 radius: 60,
-                backgroundImage: (widget.otherUser.profilePicture != null && widget.otherUser.profilePicture!.isNotEmpty)
-                    ? FileImage(File(widget.otherUser.profilePicture!)) : null,
-                child: (widget.otherUser.profilePicture == null) ? const Icon(Icons.person, size: 60) : null,
+                backgroundImage: (widget.otherUser!.profilePicture != null && widget.otherUser!.profilePicture!.isNotEmpty)
+                    ? FileImage(File(widget.otherUser!.profilePicture!)) : null,
+                child: (widget.otherUser!.profilePicture == null) ? const Icon(Icons.person, size: 60) : null,
               ),
               const SizedBox(height: 15),
-              Text(widget.otherUser.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(widget.otherUser!.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
               const Divider(color: Colors.white24, height: 30),
-              _infoRow(Icons.location_on, "Country: ${widget.otherUser.country}"),
-              _infoRow(Icons.fitness_center, "Level: ${widget.otherUser.level}"),
+              _infoRow(Icons.location_on, "Country: ${widget.otherUser!.country}"),
+              _infoRow(Icons.fitness_center, "Level: ${widget.otherUser!.level}"),
               const SizedBox(height: 30),
               GestureDetector(
                 onTap: () { Navigator.pop(context); _blockAndDeleteEverything(); },
                 child: const Text("Block & Delete Conversation", 
                   style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, fontSize: 16)),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showGroupSettings() {
+    final members = List<String>.from(widget.groupData?['members'] ?? []);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1A0505),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              const CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.grey,
+                child: Icon(Icons.groups, size: 60, color: Colors.white),
+              ),
+              const SizedBox(height: 15),
+              Text(widget.groupData?['name'] ?? 'Group', 
+                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+              const Divider(color: Colors.white24, height: 30),
+              _infoRow(Icons.people, "Members: ${members.length}"),
+              const SizedBox(height: 30),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Text("Close", 
+                  style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
               const SizedBox(height: 20),
             ],
@@ -182,6 +242,7 @@ class _ChatPageState extends State<ChatPage> {
     if ((text != null && text.trim().isNotEmpty) || imagePath != null) {
       _chatBox!.add({
         'senderEmail': widget.currentUser.email,
+        'senderName': widget.currentUser.name,
         'text': text,
         'imagePath': imagePath,
         'timestamp': DateTime.now(),
@@ -262,20 +323,37 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildUserInfoHeader(Color lightBgColor) {
+    String displayName;
+    Widget avatar;
+    
+    if (widget.isGroup) {
+      displayName = widget.groupData?['name'] ?? 'Group';
+      avatar = const CircleAvatar(
+        radius: 22,
+        backgroundColor: Color(0xFF1A0505),
+        child: Icon(Icons.groups, color: Colors.white),
+      );
+    } else {
+      displayName = widget.otherUser?.name ?? 'User';
+      avatar = CircleAvatar(
+        radius: 22,
+        backgroundColor: const Color(0xFF1A0505),
+        backgroundImage: (widget.otherUser?.profilePicture != null) 
+            ? FileImage(File(widget.otherUser!.profilePicture!)) : null,
+        child: (widget.otherUser?.profilePicture == null) 
+            ? const Icon(Icons.person, color: Colors.white) : null,
+      );
+    }
+    
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
       color: lightBgColor,
       child: Row(
         children: [
           IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: const Color(0xFF1A0505),
-            backgroundImage: (widget.otherUser.profilePicture != null) ? FileImage(File(widget.otherUser.profilePicture!)) : null,
-            child: (widget.otherUser.profilePicture == null) ? const Icon(Icons.person, color: Colors.white) : null,
-          ),
+          avatar,
           const SizedBox(width: 12),
-          Expanded(child: Text(widget.otherUser.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black))),
+          Expanded(child: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black))),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black),
             onSelected: (val) {
@@ -283,7 +361,7 @@ class _ChatPageState extends State<ChatPage> {
               if (val == 'del') _clearOnlyMessages();
             },
             itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'view', child: Text("View Profile")),
+              PopupMenuItem(value: 'view', child: Text(widget.isGroup ? "Group Settings" : "View Profile")),
               const PopupMenuItem(value: 'del', child: Text("Delete Conversation", style: TextStyle(color: Colors.red))),
             ],
           ),

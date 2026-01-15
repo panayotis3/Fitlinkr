@@ -175,6 +175,7 @@ class _ChatListPageState extends State<ChatListPage> {
       }
 
       setState(() => _displayItems.remove(itemWrapper));
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chat deleted for both users.')));
 
     } else if (type == 'group') {
@@ -231,7 +232,7 @@ class _ChatListPageState extends State<ChatListPage> {
                           child: user.profilePicture == null ? const Icon(Icons.person) : null,
                         ),
                       );
-                    }).toList(),
+                    }),
                 ],
               ),
             ),
@@ -281,8 +282,9 @@ class _ChatListPageState extends State<ChatListPage> {
                           PopupMenuButton<String>(
                             icon: const Icon(Icons.edit_square, size: 20, color: Colors.black54),
                             onSelected: (value) {
-                              if (value == 'group') _showCreateGroupDialog();
-                              else if (value == 'delete') setState(() => _isDeleting = !_isDeleting);
+                              if (value == 'group') {
+                                _showCreateGroupDialog();
+                              } else if (value == 'delete'){ setState(() => _isDeleting = !_isDeleting);}
                             },
                             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                               const PopupMenuItem<String>(value: 'group', child: Row(children: [Icon(Icons.group_add, color: Colors.black54), SizedBox(width: 8), Text('Create Group')])),

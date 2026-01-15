@@ -48,15 +48,38 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
+    _loadProfileData();
+  }
 
-    _name = widget.tester.name;
-    _country = widget.tester.country;
-    _interests = widget.tester.interests;
-    _age = widget.tester.age.toString();
-    _level = widget.tester.level;
-    _gender = widget.tester.gender;
-    _avatarPath = widget.tester.profilePicture;
-    _isProfessionalVerified = widget.tester.isProfessionalVerified;
+  Future<void> _loadProfileData() async {
+    try {
+      final box = await Hive.openBox<Tester>('testers_v2');
+      final currentUser = box.values.firstWhere(
+        (u) => u.email.toLowerCase() == widget.tester.email.toLowerCase(),
+        orElse: () => widget.tester,
+      );
+
+      if (mounted) {
+        setState(() {
+          _name = currentUser.name;
+          _country = currentUser.country;
+          _interests = currentUser.interests;
+          _age = currentUser.age.toString();
+          _level = currentUser.level;
+          _gender = currentUser.gender;
+          _avatarPath = currentUser.profilePicture;
+          _isProfessionalVerified = currentUser.isProfessionalVerified;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading profile data: $e');
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadProfileData();
   }
 
   Future<void> _setAvatarPath(String? path) async {
@@ -132,7 +155,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       gender: gender,
       profilePicture: _avatarPath,
       likedBy: widget.tester.likedBy,
-      isProfessionalVerified: widget.tester.isProfessionalVerified,
+      isProfessionalVerified: _isProfessionalVerified,
     );
 
     if (key != null) {
@@ -140,6 +163,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } else {
       await box.add(updated);
     }
+
+    // Force a flush to ensure data is written to disk
+    await box.flush();
 
     setState(() {
       _name = name;
@@ -982,8 +1008,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Colors.blue,
           isLocked: !_isProfessionalVerified,
           isVerified: _isProfessionalVerified,
-          onRight: _isProfessionalVerified ? null : () {
-            Navigator.of(context).push(
+          onRight: _isProfessionalVerified ? null : () async {
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (ctx) =>
                     VerificationProcessPage(
@@ -992,6 +1018,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
               ),
             );
+            await _loadProfileData();
           },
           onTap: _isProfessionalVerified ? () {
             setState(() {

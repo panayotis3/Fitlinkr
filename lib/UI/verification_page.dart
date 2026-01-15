@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; 
 import 'package:hive_flutter/hive_flutter.dart';
-import 'edit_profile.dart'; 
 import '../models/tester.dart'; // 1. Added the missing import
 
 class VerificationProcessPage extends StatefulWidget {
@@ -216,12 +215,7 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
           const SizedBox(height: 40),
           ElevatedButton(
             onPressed: () {
-              // 5. Passed tester here and used widget.tester
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => EditProfilePage(tester: widget.tester)),
-                (route) => false, 
-              );
+              Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,

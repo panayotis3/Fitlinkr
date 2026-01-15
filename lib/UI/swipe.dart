@@ -166,6 +166,7 @@ class _SwipePageState extends State<SwipePage> {
   Offset _dragOffset = Offset.zero;
   int _currentIndex = 0;
   late ModeTheme _theme;
+  bool _isLoading = true;
 
   // filtra
   String _fitnessLevel = 'Any';
@@ -219,20 +220,30 @@ class _SwipePageState extends State<SwipePage> {
   }
 
   Future<void> _loadUsers() async {
+    setState(() => _isLoading = true);
+    
     try {
       final box = await Hive.openBox<Tester>('testers_v2');
-      print('Total users in box: ${box.length}');
+      final interactionsBox = await Hive.openBox('user_interactions');
+      debugPrint('Total users in box: ${box.length}');
+      
+      // Get list of users I've already interacted with in this mode
+      final myInteractionKey = '${widget.currentUserEmail.toLowerCase()}_${widget.mode.toLowerCase()}';
+      final myInteractions = interactionsBox.get(myInteractionKey, defaultValue: <String>[]) as List;
+      final interactedEmails = myInteractions.cast<String>().toSet();
+      debugPrint('Already interacted with ${interactedEmails.length} users in ${widget.mode} mode');
       
       var allUsers = box.values.where((user) => 
-        user.email.toLowerCase() != widget.currentUserEmail.toLowerCase()
+        user.email.toLowerCase() != widget.currentUserEmail.toLowerCase() &&
+        !interactedEmails.contains(user.email.toLowerCase())
       ).toList();
       
-      print('Users after filtering current user: ${allUsers.length}');
+      debugPrint('Users after filtering current user and interactions: ${allUsers.length}');
       
       // If in Learner mode, only show verified professionals
       if (widget.mode.toLowerCase() == 'learner') {
         allUsers = allUsers.where((user) => user.isProfessionalVerified).toList();
-        print('Learner mode: Filtered to verified professionals only: ${allUsers.length}');
+        debugPrint('Learner mode: Filtered to verified professionals only: ${allUsers.length}');
       }
 
       final currentUser = box.values.firstWhere(
@@ -253,7 +264,7 @@ class _SwipePageState extends State<SwipePage> {
       
       final likedByMap = currentUser.likedBy ?? {};
       final whoLikedMe = likedByMap[modeToCheck] ?? [];
-      print('Current user (${widget.currentUserEmail}) in ${widget.mode} mode checking likes from $modeToCheck mode: $whoLikedMe');
+      debugPrint('Current user (${widget.currentUserEmail}) in ${widget.mode} mode checking likes from $modeToCheck mode: $whoLikedMe');
 
       // Separate users who liked you and others
       final usersWhoLikedYou = <Tester>[];
@@ -262,19 +273,19 @@ class _SwipePageState extends State<SwipePage> {
       for (final user in allUsers) {
         try {
           if (whoLikedMe.contains(user.email.toLowerCase())) {
-            print('${user.email} liked me - adding to priority list');
+            debugPrint('${user.email} liked me - adding to priority list');
             usersWhoLikedYou.add(user);
           } else {
             otherUsers.add(user);
           }
         } catch (e) {
-          print('Error processing user ${user.email}: $e');
+          debugPrint('Error processing user ${user.email}: $e');
           otherUsers.add(user);
         }
       }
       
-      print('Users who liked you: ${usersWhoLikedYou.length}');
-      print('Other users: ${otherUsers.length}');
+      debugPrint('Users who liked you: ${usersWhoLikedYou.length}');
+      debugPrint('Other users: ${otherUsers.length}');
 
       final prioritizedUsers = [...usersWhoLikedYou, ...otherUsers];
 
@@ -292,12 +303,15 @@ class _SwipePageState extends State<SwipePage> {
         
         _accounts = List.from(_allAccounts);
         _applyFilters();
+        _isLoading = false;
       });
       
-      print('Final accounts to show: ${_accounts.length}');
+      debugPrint('Final accounts to show: ${_accounts.length}');
     } catch (e, stackTrace) {
-      print('Error loading users: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error loading users: $e');
+      debugPrint('Stack trace: $stackTrace');
+      
+      setState(() => _isLoading = false);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -593,8 +607,18 @@ class _SwipePageState extends State<SwipePage> {
 
   void _animateCardOffScreen(String direction) async {
     bool isMatch = false;
-    if (direction == 'right' && _currentIndex < _accounts.length) {
-      isMatch = await _saveLike(_accounts[_currentIndex]['email']!);
+    String? matchedUserName;
+    
+    if (_currentIndex < _accounts.length) {
+      final targetEmail = _accounts[_currentIndex]['email']!;
+      
+      if (direction == 'right') {
+        matchedUserName = _accounts[_currentIndex]['name'];
+        isMatch = await _saveLike(targetEmail);
+      }
+      
+      // Save interaction (like or pass) so user doesn't appear again
+      await _saveInteraction(targetEmail);
     }
     
     setState(() {
@@ -602,34 +626,94 @@ class _SwipePageState extends State<SwipePage> {
       _dragOffset = Offset.zero;
     });
     
-    if (isMatch) {
-      // It's a match! Navigate to chat list page
-      // ignore: use_build_context_synchronously
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatListPage(
-            currentUserEmail: widget.currentUserEmail,
-            mode: widget.mode,
-          ),
-        ),
-      );
+    if (isMatch && matchedUserName != null) {
+      _showMatchDialog(matchedUserName);
+    } else if (!isMatch && direction == 'right') {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('It\'s a Match! 🎉'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.green,
+          content: Text('Liked!'),
+          duration: Duration(milliseconds: 500),
         ),
       );
-    } else {
+    } else if (direction == 'left') {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(direction == 'right' ? 'Liked!' : 'Passed'),
-          duration: const Duration(milliseconds: 500),
+        const SnackBar(
+          content: Text('Passed'),
+          duration: Duration(milliseconds: 500),
         ),
       );
+    }
+  }
+
+  void _showMatchDialog(String matchedUserName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: _theme.cardBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.favorite, color: _theme.primaryColor, size: 80),
+            const SizedBox(height: 16),
+            const Text(
+              "It's a Match!",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You and $matchedUserName liked each other!',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontFamily: 'Inter'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Keep Swiping'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatListPage(
+                    currentUserEmail: widget.currentUserEmail,
+                    mode: widget.mode,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _theme.primaryColor,
+            ),
+            child: const Text('Send Message', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveInteraction(String userEmail) async {
+    try {
+      final interactionsBox = await Hive.openBox('user_interactions');
+      final myInteractionKey = '${widget.currentUserEmail.toLowerCase()}_${widget.mode.toLowerCase()}';
+      
+      final currentInteractions = interactionsBox.get(myInteractionKey, defaultValue: <String>[]) as List;
+      final interactionsList = currentInteractions.cast<String>().toList();
+      
+      if (!interactionsList.contains(userEmail.toLowerCase())) {
+        interactionsList.add(userEmail.toLowerCase());
+        await interactionsBox.put(myInteractionKey, interactionsList);
+        debugPrint('Saved interaction with $userEmail in ${widget.mode} mode');
+      }
+    } catch (e) {
+      debugPrint('Error saving interaction: $e');
     }
   }
 
@@ -689,7 +773,7 @@ class _SwipePageState extends State<SwipePage> {
         }
       }
     } catch (e) {
-      print('Error saving like: $e');
+      debugPrint('Error saving like: $e');
     }
     return false; // Not a match
   }
@@ -737,11 +821,29 @@ class _SwipePageState extends State<SwipePage> {
   }
 
   Widget _buildCardStack() {
+    if (_isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: _theme.primaryColor),
+      );
+    }
+    
     if (_currentIndex >= _accounts.length) {
-      return const Center(
-        child: Text(
-          'No more accounts',
-          style: TextStyle(fontSize: 24, fontFamily: 'Inter', color: Colors.grey),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, size: 80, color: _theme.primaryColor),
+            const SizedBox(height: 16),
+            const Text(
+              'No more profiles',
+              style: TextStyle(fontSize: 24, fontFamily: 'Inter', color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Check back later for more matches!',
+              style: TextStyle(fontSize: 16, fontFamily: 'Inter', color: Colors.grey),
+            ),
+          ],
         ),
       );
     }
