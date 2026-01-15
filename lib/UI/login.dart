@@ -111,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(color: Colors.white70, fontSize: 14)),
                   const SizedBox(height: 50),
                   const Center(child: Text("ARE YOU READY?", 
-                    style: TextStyle(color: Colors.white, fontSize: 18))),
+                    style: TextStyle(color: Colors.white, fontFamily: 'Jura' fontSize: 22))),
                   const SizedBox(height: 30),
 
                   _buildField("Email", "admin@fitlinkr.gr", _emailController),
