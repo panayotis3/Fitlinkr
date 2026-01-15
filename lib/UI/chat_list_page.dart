@@ -282,9 +282,8 @@ class _ChatListPageState extends State<ChatListPage> {
                           PopupMenuButton<String>(
                             icon: const Icon(Icons.edit_square, size: 20, color: Colors.black54),
                             onSelected: (value) {
-                              if (value == 'group') {
-                                _showCreateGroupDialog();
-                              } else if (value == 'delete'){ setState(() => _isDeleting = !_isDeleting);}
+                              if (value == 'group'){ _showCreateGroupDialog();}
+                              else if (value == 'delete') {setState(() => _isDeleting = !_isDeleting);}
                             },
                             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                               const PopupMenuItem<String>(value: 'group', child: Row(children: [Icon(Icons.group_add, color: Colors.black54), SizedBox(width: 8), Text('Create Group')])),
@@ -322,7 +321,7 @@ class _ChatListPageState extends State<ChatListPage> {
           backgroundColor: _theme.primaryColor,
           shape: const CircleBorder(),
           onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SwipePage(mode: widget.mode, currentUserEmail: widget.currentUserEmail)));
+            Navigator.pop(context);
           },
           child: const Text("SWIPE", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         ),
@@ -364,6 +363,46 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
+  String _getLastMessage({Tester? user, Map? groupData, required bool isGroup}) {
+    try {
+      String chatId;
+      
+      if (isGroup) {
+        String groupId = groupData?['id'] ?? 'unknown';
+        chatId = 'group_chat_$groupId';
+      } else {
+        List<String> emails = [_currentUser!.email, user!.email];
+        emails.sort();
+        String emailsPart = emails.join('_').replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
+        String modePart = widget.mode.toLowerCase().replaceAll('-', '');
+        chatId = 'chat_${modePart}_$emailsPart';
+      }
+
+      // Try to open the chat box synchronously if already opened
+      if (Hive.isBoxOpen(chatId)) {
+        final chatBox = Hive.box(chatId);
+        if (chatBox.isEmpty) {
+          return isGroup ? 'Send a message' : "It's a match! Say hello.";
+        }
+        
+        // Get the last message
+        final lastMsg = chatBox.getAt(chatBox.length - 1) as Map;
+        final text = lastMsg['text'] as String?;
+        
+        if (text != null && text.isNotEmpty) {
+          return text.length > 30 ? '${text.substring(0, 30)}...' : text;
+        } else if (lastMsg['imagePath'] != null) {
+          return '📷 Photo';
+        }
+      }
+      
+      return isGroup ? 'Send a message' : "It's a match! Say hello.";
+    } catch (e) {
+      debugPrint('Error getting last message: $e');
+      return isGroup ? 'Send a message' : "It's a match! Say hello.";
+    }
+  }
+
   // Γενική μέθοδος εμφάνισης (User ή Group)
   Widget _buildGenericChatItem(Map<String, dynamic> itemWrapper) {
     final type = itemWrapper['type'];
@@ -379,15 +418,15 @@ class _ChatListPageState extends State<ChatListPage> {
     if (type == 'match') {
       final user = data as Tester;
       name = user.name;
-      subtitle = "It's a match! Say hello.";
+      subtitle = _getLastMessage(user: user, isGroup: false);
       if (user.profilePicture != null && user.profilePicture!.isNotEmpty) {
         image = FileImage(File(user.profilePicture!));
       }
     } else if (type == 'group') {
       final group = data as Map;
-      isGroup = true; // Το χρησιμοποιούμε για το εικονίδιο τοπικά
+      isGroup = true;
       name = group['name'] ?? 'Group';
-      subtitle = "${(group['members'] as List).length} members";
+      subtitle = _getLastMessage(groupData: group, isGroup: true);
     }
 
     return GestureDetector(

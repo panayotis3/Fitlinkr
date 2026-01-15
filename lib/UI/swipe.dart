@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
 import 'chat_list_page.dart';
+import 'chat_page.dart';
 
 
 class ModeTheme {
@@ -655,8 +656,31 @@ class _SwipePageState extends State<SwipePage> {
     }
   }
 
-  void _showMatchDialog(String matchedUserName) {
+  void _showMatchDialog(String matchedUserName) async {
+    // Get the matched user's data
+    Tester? matchedUser;
+    Tester? currentUser;
+    
+    if (_currentIndex > 0 && _currentIndex <= _accounts.length) {
+      final matchedUserEmail = _accounts[_currentIndex - 1]['email']!;
+      final testerBox = await Hive.openBox<Tester>('testers_v2');
+      
+      try {
+        matchedUser = testerBox.values.firstWhere(
+          (t) => t.email.toLowerCase() == matchedUserEmail.toLowerCase(),
+        );
+        
+        currentUser = testerBox.values.firstWhere(
+          (t) => t.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),
+        );
+      } catch (e) {
+        debugPrint('Error fetching user data: $e');
+      }
+    }
+
+    // ignore: use_build_context_synchronously
     showDialog(
+      // ignore: use_build_context_synchronously
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -687,15 +711,32 @@ class _SwipePageState extends State<SwipePage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatListPage(
-                    currentUserEmail: widget.currentUserEmail,
-                    mode: widget.mode,
+              if (matchedUser != null && currentUser != null) {
+                // Navigate directly to ChatPage with the matched user
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatPage(
+                      currentUser: currentUser!,
+                      userMode: widget.mode,
+                      otherUser: matchedUser!,
+                      isGroup: false,
+                      groupData: null,
+                    ),
                   ),
-                ),
-              );
+                );
+              } else {
+                // Fallback to ChatListPage if user data unavailable
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatListPage(
+                      currentUserEmail: widget.currentUserEmail,
+                      mode: widget.mode,
+                    ),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: _theme.primaryColor,
@@ -753,6 +794,7 @@ class _SwipePageState extends State<SwipePage> {
             age: likedUser.age,
             level: likedUser.level,
             gender: likedUser.gender,
+            profilePicture: likedUser.profilePicture,
             likedBy: currentLikedByMap,
             isProfessionalVerified: likedUser.isProfessionalVerified,
           );
@@ -926,17 +968,22 @@ class _SwipePageState extends State<SwipePage> {
   }
 
   Widget _buildProfileImage(Map<String, String> account) {
+    final imagePath = account['profilePicture'];
+    final hasValidImage = imagePath != null && 
+                          imagePath.isNotEmpty && 
+                          File(imagePath).existsSync();
+    
     return Container(
       height: 260,
       decoration: BoxDecoration(
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(16),
       ),
-      child: account['profilePicture']!.isNotEmpty
+      child: hasValidImage
           ? ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.file(
-                File(account['profilePicture']!),
+                File(imagePath),
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
@@ -1030,12 +1077,12 @@ class _SwipePageState extends State<SwipePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () { //allagh
-                Navigator.pushReplacement(
+              onPressed: () {
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => ChatListPage(
-                      currentUserEmail: widget.currentUserEmail, // Στέλνουμε το email
+                      currentUserEmail: widget.currentUserEmail,
                       mode: widget.mode,
                     ),
                   ),
