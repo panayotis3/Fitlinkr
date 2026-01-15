@@ -10,6 +10,7 @@ import '../models/tester.dart';
 import 'login.dart';
 import 'swipe.dart';
 import 'verification_page.dart';
+import 'account_settings.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Tester tester;
@@ -894,28 +895,53 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 const SizedBox(height: 8),
                 _buildInfoRow('Interests', _interests, maxLines: 2),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
+                        onPressed: _openEditModal,
+                        child: const Text(
+                          'Edit Details',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[700]!, width: 1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      elevation: 2,
-                    ),
-                    onPressed: _openEditModal,
-                    child: const Text(
-                      'Edit Account Details',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                      child: IconButton(
+                        icon: const Icon(Icons.settings_outlined, size: 20),
+                        color: Colors.white,
+                        padding: const EdgeInsets.all(10),
+                        constraints: const BoxConstraints(),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AccountSettingsPage(tester: widget.tester),
+                            ),
+                          );
+                        },
+                        tooltip: 'Account Settings',
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
