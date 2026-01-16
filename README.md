@@ -293,7 +293,12 @@ android {
   - Profile picture storage στο file system
 
 #### ⚠️ **Διαφορές από το Prototype**
-
+     - Professional κλειδωμένο και ανοιγει μονο αν εισαι verified
+      -Οχι κλησεις και βιντεοκλησεις αλλα λεπτομέριες για τον συνομιλητή
+      -Ομαδικες συνομιλίες
+      -block delete
+      -delete profile 
+      -match pop-up
 
 ## 🎯 Χαρακτηριστικά Εφαρμογής
 
