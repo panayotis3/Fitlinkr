@@ -37,25 +37,6 @@
 
 4. **Ανοίξτε την εφαρμογή** και ξεκινήστε!
 
-#### **Μέθοδος 2: Εκτέλεση από Κώδικα (Για Developers)**
-
-```bash
-# 1. Clone το repository
-git clone [URL_REPOSITORY]
-cd fitlinkr
-
-# 2. Εγκατάσταση dependencies
-flutter pub get
-
-# 3. Σύνδεση Android device ή εκκίνηση emulator
-flutter devices
-
-# 4. Εκτέλεση της εφαρμογής
-flutter run
-```
-
----
-
 ### Προδημιουργημένοι Λογαριασμοί Δοκιμής
 
 Για να δείτε **όλες τις δυνατότητες** της εφαρμογής αμέσως, χρησιμοποιήστε τους παρακάτω λογαριασμούς:
@@ -214,8 +195,7 @@ flutter run
 
 ### 🔗 Σύνδεσμοι
 
-- **📦 APK Download:** [Σύνδεσμος APK](#) *(συμπληρώστε)*
-- **💻 Code Repository:** https://github.com/panayotis3/Fitlinkr.git
+- **📦 APK Download:** [Σύνδεσμος APK](#)
 - **📄 Documentation:** Αυτό το README.md
 
 ### ⚙️ Build Configuration
