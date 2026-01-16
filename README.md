@@ -295,23 +295,6 @@ android {
 #### ⚠️ **Διαφορές από το Prototype**
 
 
----
-
-## δ. Βίντεο Παρουσίασης
-
-🎥 **Demo Video:** [YouTube/Drive Link](#) *(προαιρετικό - συμπληρώστε)*
-
-**Περιεχόμενο βίντεο (έως 3 λεπτά):**
-- Εγγραφή νέου χρήστη
-- Login με existing account
-- Swipe σε διαφορετικά modes
-- Match & Chat demonstration
-- Group chat creation
-- Profile editing & verification
-- Settings & account management
-
----
-
 ## 🎯 Χαρακτηριστικά Εφαρμογής
 
 ### ✨ Core Features
@@ -333,7 +316,7 @@ android {
    - Message status tracking
 
 4. **Profile Customization**
-   - Custom avatars
+   - Profile Picture
    - Editable information
    - Professional verification badge
 
@@ -391,10 +374,10 @@ android {
 Η εφαρμογή FitLinkr **λειτουργεί πλήρως αυτόνομα** χωρίς εξάρτηση από εξωτερικές υπηρεσίες:
 
 #### **1. Τοπική Βάση Δεδομένων (Hive)**
-- ✅ **Δεν απαιτείται internet connection**
-- ✅ Όλα τα δεδομένα αποθηκεύονται στη συσκευή
-- ✅ Δεν υπάρχουν εξωτερικοί servers που μπορεί να πέσουν
-- ✅ Άμεση προσβασιμότητα 24/7
+- **Δεν απαιτείται internet connection**
+- Όλα τα δεδομένα αποθηκεύονται στη συσκευή
+- Δεν υπάρχουν εξωτερικοί servers που μπορεί να πέσουν
+- Άμεση προσβασιμότητα 24/7
 
 #### **2. Data Persistence - Αποδείξεις Λειτουργικότητας**
 
@@ -410,12 +393,12 @@ android {
 
 | Ενέργεια | Layout A | Layout B | Αποτέλεσμα |
 |----------|----------|----------|------------|
-| Edit Name | Edit Profile | Swipe Screen | ✅ Το όνομα ενημερώνεται παντού |
-| Upload Avatar | Edit Profile | Chat List | ✅ Το avatar εμφανίζεται στα chats |
-| Send Message | Chat Page | Chat List | ✅ Τελευταίο μήνυμα + unread count |
-| Like User | Swipe Screen | Chat List | ✅ Match → εμφανίζεται στη λίστα |
-| Change Password | Settings | Login | ✅ Νέος κωδικός απαιτείται για login |
-| Verify Professional | Verification Page | Edit Profile | ✅ Badge εμφανίζεται στο προφίλ |
+| Edit Name | Edit Profile | Swipe Screen | Το όνομα ενημερώνεται παντού |
+| Upload Avatar | Edit Profile | Chat List | Το avatar εμφανίζεται στα chats |
+| Send Message | Chat Page | Chat List | Τελευταίο μήνυμα + unread count |
+| Like User | Swipe Screen | Chat List | Match → εμφανίζεται στη λίστα |
+| Change Password | Settings | Login | Νέος κωδικός απαιτείται για login |
+| Verify Professional | Verification Page | Edit Profile | Badge εμφανίζεται στο προφίλ |
 
 **Γ. Δοκιμαστικό Σενάριο (Proof of Persistence):**
 
@@ -432,12 +415,12 @@ android {
 
 Η εφαρμογή **αποδεδειγμένα** δεν είναι static:
 
-- ✅ **Dynamic User List:** Νέες εγγραφές εμφανίζονται αμέσως στο swipe
-- ✅ **Real-Time Matching:** Αμοιβαία likes → αυτόματη δημιουργία chat
-- ✅ **Live Chat Updates:** Μηνύματα αποθηκεύονται με timestamp
-- ✅ **Profile Changes Propagate:** Τροποποιήσεις φαίνονται σε όλα τα screens
-- ✅ **Group Chat Sync:** Μέλη βλέπουν τα ίδια μηνύματα
-- ✅ **Verification Status:** Το badge ενημερώνεται μετά την επαλήθευση
+- **Dynamic User List:** Νέες εγγραφές εμφανίζονται αμέσως στο swipe
+- **Real-Time Matching:** Αμοιβαία likes → αυτόματη δημιουργία chat
+- **Live Chat Updates:** Μηνύματα αποθηκεύονται με timestamp
+- **Profile Changes Propagate:** Τροποποιήσεις φαίνονται σε όλα τα screens
+- **Group Chat Sync:** Μέλη βλέπουν τα ίδια μηνύματα
+- **Verification Status:** Το badge ενημερώνεται μετά την επαλήθευση
 
 ---
 
@@ -501,13 +484,13 @@ flutter install
 
 ## 🎓 Ακαδημαϊκές Σημειώσεις
 
-Αυτή η εφαρμογή αναπτύχθηκε ως μέρος του μαθήματος **Αλληλεπίδραση_Ανθρώπου_Υπολογιστή** για το ακαδημαϊκό έτος 2024-2025.
+Αυτή η εφαρμογή αναπτύχθηκε ως μέρος του μαθήματος **Αλληλεπίδραση Ανθρώπου Υπολογιστή** για το ακαδημαϊκό έτος 2024-2025.
 
 **Φάση 3: Τελική Παράδοση**
-- ✅ Λειτουργική εφαρμογή με data persistence
-- ✅ Πλήρης τεκμηρίωση
-- ✅ Προδημιουργημένοι χρήστες για testing
-- ✅ Χωρίς εξαρτήσεις από εξωτερικές υπηρεσίες
+- Λειτουργική εφαρμογή με data persistence
+- Πλήρης τεκμηρίωση
+- Προδημιουργημένοι χρήστες για testing
+- Χωρίς εξαρτήσεις από εξωτερικές υπηρεσίες
 
 ---
 
