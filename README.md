@@ -409,7 +409,7 @@ android {
 
 ---
 
-## 🛠️ Development Info
+## Development Info
 
 ### Δομή Project
 
