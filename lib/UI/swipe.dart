@@ -528,35 +528,7 @@ class _SwipePageState extends State<SwipePage> {
 
   Widget _buildFilterButtons(StateSetter setModalState) {
     return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () {
-              setModalState(() {
-                _fitnessLevel = 'Any';
-                _country = 'Any';
-                _gender = 'Any';
-                _selectedInterests.clear();
-              });
-              _applyFilters();
-            },
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text(
-              'Reset',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Inter',
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
+      children: [ Expanded(
           child: ElevatedButton(
             onPressed: () {
               _applyFilters();
@@ -688,7 +660,7 @@ class _SwipePageState extends State<SwipePage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: _theme.cardBackgroundColor,
+        backgroundColor: _theme.backgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -815,8 +787,20 @@ class _SwipePageState extends State<SwipePage> {
           if (currentUserKey != null) {
             final currentUser = box.get(currentUserKey);
             if (currentUser != null) {
+              // Determine which mode to check for cross-mode matching
+              // If I'm a Learner, check if Professional liked me
+              // If I'm a Professional, check if Learner liked me
+              String modeToCheck;
+              if (widget.mode.toLowerCase() == 'learner') {
+                modeToCheck = 'Professional';
+              } else if (widget.mode.toLowerCase() == 'professional') {
+                modeToCheck = 'Learner';
+              } else {
+                modeToCheck = widget.mode;
+              }
+              
               final myLikedByMap = currentUser.likedBy ?? {};
-              final peopleWhoLikedMe = myLikedByMap[widget.mode] ?? [];
+              final peopleWhoLikedMe = myLikedByMap[modeToCheck] ?? [];
               
               // If the person I just liked has also liked me, it's a match!
               if (peopleWhoLikedMe.contains(likedUserEmail.toLowerCase())) {
