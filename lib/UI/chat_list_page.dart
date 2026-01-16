@@ -322,7 +322,15 @@ class _ChatListPageState extends State<ChatListPage> {
           backgroundColor: _theme.primaryColor,
           shape: const CircleBorder(),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushReplacement(
+              context, 
+              MaterialPageRoute(
+                builder: (_) => SwipePage(
+                  mode: widget.mode, 
+                  currentUserEmail: widget.currentUserEmail, 
+                ),
+              ),
+            );
           },
           child: const Text("SWIPE", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         ),
