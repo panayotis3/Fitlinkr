@@ -256,29 +256,24 @@ android {
    - Professional verification
    - Account settings
 
-#### 🆕 **Επιπλέον Χαρακτηριστικά (πέραν του Prototype)**
-
-- **Enhanced Security:**
-  - Password confirmation dialog για critical actions
-  - Secure account deletion
-  
-- **Improved UX:**
-  - Custom splash screen
-  - Adaptive icons
-  - Error handling με user-friendly messages
-  
-- **Data Persistence:**
-  - Πλήρης αποθήκευση όλων των δεδομένων στο Hive
-  - Διατήρηση chat history
-  - Profile picture storage στο file system
-
 #### ⚠️ **Διαφορές από το Prototype**
-     - Professional κλειδωμένο και ανοιγει μονο αν εισαι verified
-      -Οχι κλησεις και βιντεοκλησεις αλλα λεπτομέριες για τον συνομιλητή
-      -Ομαδικες συνομιλίες
-      -block delete
-      -delete profile 
-      -match pop-up
+
+1. **Professional Mode Access Control:**
+   - Το Professional mode παραμένει κλειδωμένο μέχρι την επιτυχή επαλήθευση του χρήστη
+
+2. **Επικοινωνία:**
+   - Δεν υποστηρίζονται φωνητικές ή βιντεοκλήσεις
+   - Παρέχονται λεπτομερείς πληροφορίες προφίλ για κάθε συνομιλητή
+
+3. **Chat Λειτουργικότητα:**
+   - Προστέθηκε δυνατότητα δημιουργίας ομαδικών συνομιλιών
+   - Λειτουργίες αποκλεισμού (block) και διαγραφής μηνυμάτων
+
+4. **Διαχείριση Λογαριασμού:**
+   - Πλήρης δυνατότητα διαγραφής προφίλ από τις ρυθμίσεις
+
+5. **User Experience:**
+   - Αυτόματη εμφάνιση pop-up παραθύρου κατά τη δημιουργία match
 
 ## 🎯 Χαρακτηριστικά Εφαρμογής
 
