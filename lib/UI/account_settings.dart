@@ -436,8 +436,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                         _buildInfoRow('Email', widget.tester.email),
                         const SizedBox(height: 8),
                         _buildInfoRow('Name', widget.tester.name),
-                        const SizedBox(height: 8),
-                        _buildInfoRow('Member Since', _getMemberSinceDate()),
                       ],
                     ),
                   ),
@@ -540,10 +538,5 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         ),
       ],
     );
-  }
-
-  String _getMemberSinceDate() {
-    // Since we don't track creation date, return a default message
-    return 'Beta Tester';
   }
 }

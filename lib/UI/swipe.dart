@@ -5,7 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
 import 'chat_list_page.dart';
 import 'chat_page.dart';
-
+import 'edit_profile.dart';
 
 class ModeTheme {
   final String mode;
@@ -168,6 +168,7 @@ class _SwipePageState extends State<SwipePage> {
   int _currentIndex = 0;
   late ModeTheme _theme;
   bool _isLoading = true;
+  Tester? _currentUser;
 
   // filtra
   String _fitnessLevel = 'Any';
@@ -259,6 +260,9 @@ class _SwipePageState extends State<SwipePage> {
         (u) => u.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),
         orElse: () => Tester(name: '', email: '', passwordHash: '', country: '', interests: '', age: 0, level: '', gender: ''),
       );
+      
+      // Store current user in state
+      _currentUser = currentUser;
       
       // Determine which mode to check for likes based on current mode
       // Learners see Professionals who liked them, and vice versa
@@ -862,9 +866,18 @@ class _SwipePageState extends State<SwipePage> {
         children: [
           Image.asset('assets/logo.png', height: 60),
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              if (_currentUser != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EditProfilePage(tester: _currentUser!),
+                  ),
+                );
+              }
+            },
             child: _theme.icon,
-          ),
+            ),
         ],
       ),
     );

@@ -317,7 +317,7 @@ class _RegisterPageState extends State<RegisterPage> {
               style: const TextStyle(fontFamily: 'IstokWeb', color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14),
               children: [
                 
-                TextSpan(text: parts[0] + "(", style: const TextStyle(color: Colors.white)),
+                TextSpan(text: "${parts[0]}(", style: const TextStyle(color: Colors.white)),
                 const TextSpan(text: "*", style: TextStyle(color: Colors.red)),
                 TextSpan(text: parts[1], style: const TextStyle(color: Colors.white)),
               ],

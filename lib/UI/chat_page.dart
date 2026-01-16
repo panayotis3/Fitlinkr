@@ -341,6 +341,7 @@ class _ChatPageState extends State<ChatPage> {
     _groupMembers.remove(email);
     await _updateGroupInHive();
     _sendMessage(systemMessage: "Admin removed $name");
+    // ignore: use_build_context_synchronously
     Navigator.pop(context);
     _showGroupDetails();
   }
@@ -350,7 +351,9 @@ class _ChatPageState extends State<ChatPage> {
     _groupMembers.remove(widget.currentUser.email);
     if (_adminEmail == widget.currentUser.email && _groupMembers.isNotEmpty) _adminEmail = _groupMembers.first;
     await _updateGroupInHive();
+    // ignore: use_build_context_synchronously
     Navigator.pop(context); 
+    // ignore: use_build_context_synchronously
     Navigator.pop(context); 
   }
 
