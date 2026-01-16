@@ -116,6 +116,7 @@ class _ChatListPageState extends State<ChatListPage> {
       'name': groupName,
       'mode': widget.mode,
       'members': memberEmails.toList(),
+      'admin': widget.currentUserEmail,
       'created_at': DateTime.now().toIso8601String(),
     };
 
