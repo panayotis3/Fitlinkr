@@ -183,6 +183,81 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  //pop up epibebaiwshs prin to sign out
+  Future<void> _showSignOutDialog() async {
+    final shouldSignOut = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF2A0A0A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.redAccent, width: 2),
+        ),
+        title: Row(
+          children: const [
+            Icon(Icons.logout, color: Colors.redAccent, size: 26),
+            SizedBox(width: 12),
+            Text(
+              'Sign Out',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontFamily: 'Inter',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              'CANCEL',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'SIGN OUT',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSignOut != true || !mounted) return;
+
+    // Clear the whole navigation stack so the back button can't
+    // return to the signed-in screens.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+      (route) => false,
+    );
+  }
+
   // ignore: unused_element
   Future<void> _showTestersDialog() async {
     final box = await Hive.openBox<Tester>('testers');
@@ -888,14 +963,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   elevation: 2,
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginPage(),
-                    ),
-                  );
-                },
+                onPressed: _showSignOutDialog,
                 child: const Text(
                   'SIGN OUT',
                   style: TextStyle(
