@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/tester.dart';
+import '../utils/match_rules.dart';
 
 class ChatPage extends StatefulWidget {
   final Tester currentUser;
@@ -47,15 +48,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _openChatBox() async {
-    String chatId;
-    if (widget.isGroup) {
-      chatId = 'chat_group_${widget.groupData!['id']}';
-    } else {
-      List<String> emails = [widget.currentUser.email, widget.otherUser!.email];
-      emails.sort();
-      String emailsPart = emails.join('_').replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
-      chatId = 'chat_${widget.userMode.toLowerCase().replaceAll('-', '')}_$emailsPart';
-    }
+    final chatId = widget.isGroup
+        ? groupChatThreadId('${widget.groupData!['id']}')
+        : directChatThreadId(
+            myEmail: widget.currentUser.email,
+            otherEmail: widget.otherUser!.email,
+            mode: widget.userMode,
+          );
 
     _chatBox = await Hive.openBox(chatId);
     _markMessagesAsSeen();
@@ -93,17 +92,21 @@ class _ChatPageState extends State<ChatPage> {
 
       if (currentUserIndex != -1) {
         Tester myUser = userBox.getAt(currentUserIndex)!;
+        // Their like of me is stored under the mode they were swiping in,
+        // which is the counterpart of mine.
+        final theirMode = counterpartMode(widget.userMode);
         Map<String, List<String>> updatedLikedBy = Map.from(myUser.likedBy ?? {});
-        List<String> modeLikes = List.from(updatedLikedBy[widget.userMode] ?? []);
+        List<String> modeLikes = List.from(updatedLikedBy[theirMode] ?? []);
 
         modeLikes.removeWhere((email) => email.toLowerCase() == widget.otherUser!.email.toLowerCase());
-        updatedLikedBy[widget.userMode] = modeLikes;
-        
+        updatedLikedBy[theirMode] = modeLikes;
+
         final updatedUser = Tester(
           name: myUser.name, email: myUser.email, passwordHash: myUser.passwordHash,
           country: myUser.country, interests: myUser.interests, age: myUser.age,
           level: myUser.level, gender: myUser.gender, profilePicture: myUser.profilePicture,
           likedBy: updatedLikedBy,
+          isProfessionalVerified: myUser.isProfessionalVerified,
         );
 
         await userBox.putAt(currentUserIndex, updatedUser);
@@ -373,9 +376,11 @@ class _ChatPageState extends State<ChatPage> {
   void _showAddMembersDialog() {
     final testerBox = Hive.box<Tester>('testers_v2');
     final availableMatches = testerBox.values.where((user) {
-      final myLikes = widget.currentUser.likedBy?[widget.userMode] ?? [];
-      final userLikes = user.likedBy?[widget.userMode] ?? [];
-      bool isMatch = myLikes.contains(user.email) && userLikes.contains(widget.currentUser.email);
+      final isMatch = isMutualMatch(
+        me: widget.currentUser,
+        other: user,
+        mode: widget.userMode,
+      );
       return isMatch && !_groupMembers.contains(user.email);
     }).toList();
 

@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
-import 'swipe.dart'; 
+import '../utils/match_rules.dart';
+import 'swipe.dart';
 import 'edit_profile.dart'; 
 import 'chat_page.dart';
 
@@ -51,18 +52,18 @@ class _ChatListPageState extends State<ChatListPage> {
       );
       _currentUser = currentUser;
 
-      //  MATCHES 
+      //  MATCHES
+      // Likes arrive from the counterpart mode: browsing as a Learner, I am
+      // liked by people browsing as Professionals, and vice versa.
       final myLikedByMap = currentUser.likedBy ?? {};
-      final peopleWhoLikedMe = myLikedByMap[widget.mode] ?? [];
+      final peopleWhoLikedMe = myLikedByMap[counterpartMode(widget.mode)] ?? [];
       final foundMatches = <Tester>[];
 
       for (var otherEmail in peopleWhoLikedMe) {
         try {
           final otherUser = testerBox.values.firstWhere((u) => u.email.toLowerCase() == otherEmail.toLowerCase());
-          final othersLikedByMap = otherUser.likedBy ?? {};
-          final peopleOtherUserLiked = othersLikedByMap[widget.mode] ?? [];
 
-          if (peopleOtherUserLiked.contains(widget.currentUserEmail.toLowerCase())) {
+          if (isMutualMatch(me: currentUser, other: otherUser, mode: widget.mode)) {
             foundMatches.add(otherUser);
           }
         } catch (e) {
@@ -93,6 +94,11 @@ class _ChatListPageState extends State<ChatListPage> {
 
       // Ταξινόμηση: Νεότερα πρώτα
       tempList.sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
+
+      // Το τελευταίο μήνυμα κάθε συνομιλίας, πριν το build.
+      for (final item in tempList) {
+        item['preview'] = await _loadPreview(item);
+      }
 
       if (mounted) {
         setState(() {
@@ -146,21 +152,26 @@ class _ChatListPageState extends State<ChatListPage> {
       }, orElse: () => null);
 
       // Αφαίρεση από εμένα
+      // Το like τους προς εμένα είναι αποθηκευμένο με το mode στο οποίο
+      // έκαναν εκείνοι swipe, δηλαδή το counterpart του δικού μου.
       if (myKey != null) {
         final me = box.get(myKey)!;
+        final theirMode = counterpartMode(widget.mode);
         final myLikes = Map<String, List<String>>.from(me.likedBy ?? {});
-        final myModeLikes = List<String>.from(myLikes[widget.mode] ?? []);
+        final myModeLikes = List<String>.from(myLikes[theirMode] ?? []);
         myModeLikes.remove(matchToDelete.email.toLowerCase());
-        myLikes[widget.mode] = myModeLikes;
-        
+        myLikes[theirMode] = myModeLikes;
+
         await box.put(myKey, Tester(
           name: me.name, email: me.email, passwordHash: me.passwordHash, country: me.country,
           interests: me.interests, age: me.age, level: me.level, gender: me.gender,
           profilePicture: me.profilePicture, likedBy: myLikes,
+          isProfessionalVerified: me.isProfessionalVerified,
         ));
       }
 
       // Αφαίρεση από τον άλλον
+      // Το δικό μου like προς αυτούς είναι αποθηκευμένο με το δικό μου mode.
       if (otherKey != null) {
         final other = box.get(otherKey)!;
         final otherLikes = Map<String, List<String>>.from(other.likedBy ?? {});
@@ -172,6 +183,7 @@ class _ChatListPageState extends State<ChatListPage> {
           name: other.name, email: other.email, passwordHash: other.passwordHash, country: other.country,
           interests: other.interests, age: other.age, level: other.level, gender: other.gender,
           profilePicture: other.profilePicture, likedBy: otherLikes,
+          isProfessionalVerified: other.isProfessionalVerified,
         ));
       }
 
@@ -372,43 +384,38 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  String _getLastMessage({Tester? user, Map? groupData, required bool isGroup}) {
-    try {
-      String chatId;
-      
-      if (isGroup) {
-        String groupId = groupData?['id'] ?? 'unknown';
-        chatId = 'group_chat_$groupId';
-      } else {
-        List<String> emails = [_currentUser!.email, user!.email];
-        emails.sort();
-        String emailsPart = emails.join('_').replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
-        String modePart = widget.mode.toLowerCase().replaceAll('-', '');
-        chatId = 'chat_${modePart}_$emailsPart';
-      }
+  // Διαβάζει το τελευταίο μήνυμα μιας συνομιλίας.
+  // Ανοίγει το box αν χρειάζεται - δεν αρκεί να ελέγξουμε αν είναι ήδη ανοιχτό,
+  // γιατί σε καθαρή εκκίνηση της εφαρμογής δεν είναι ανοιχτό κανένα.
+  Future<String> _loadPreview(Map<String, dynamic> item) async {
+    final isGroup = item['type'] == 'group';
+    final fallback = isGroup ? 'Send a message' : "It's a match! Say hello.";
 
-      // Try to open the chat box synchronously if already opened
-      if (Hive.isBoxOpen(chatId)) {
-        final chatBox = Hive.box(chatId);
-        if (chatBox.isEmpty) {
-          return isGroup ? 'Send a message' : "It's a match! Say hello.";
-        }
-        
-        // Get the last message
-        final lastMsg = chatBox.getAt(chatBox.length - 1) as Map;
-        final text = lastMsg['text'] as String?;
-        
-        if (text != null && text.isNotEmpty) {
-          return text.length > 30 ? '${text.substring(0, 30)}...' : text;
-        } else if (lastMsg['imagePath'] != null) {
-          return '📷 Photo';
-        }
+    try {
+      final chatId = isGroup
+          ? groupChatThreadId('${(item['data'] as Map)['id']}')
+          : directChatThreadId(
+              myEmail: _currentUser!.email,
+              otherEmail: (item['data'] as Tester).email,
+              mode: widget.mode,
+            );
+
+      final chatBox = await Hive.openBox(chatId);
+      if (chatBox.isEmpty) return fallback;
+
+      final lastMsg = chatBox.getAt(chatBox.length - 1);
+      if (lastMsg is! Map) return fallback;
+
+      final text = lastMsg['text'] as String?;
+      if (text != null && text.isNotEmpty) {
+        return text.length > 30 ? '${text.substring(0, 30)}...' : text;
       }
-      
-      return isGroup ? 'Send a message' : "It's a match! Say hello.";
+      if (lastMsg['imagePath'] != null) return '📷 Photo';
+
+      return fallback;
     } catch (e) {
       debugPrint('Error getting last message: $e');
-      return isGroup ? 'Send a message' : "It's a match! Say hello.";
+      return fallback;
     }
   }
 
@@ -418,16 +425,17 @@ class _ChatListPageState extends State<ChatListPage> {
     final data = itemWrapper['data'];
     
     String name = '';
-    String subtitle = '';
     String time = 'Now';
     ImageProvider? image;
     bool isGroup = false;
+
+    // Το preview υπολογίστηκε ήδη στο _loadData.
+    final String subtitle = itemWrapper['preview'] as String? ?? '';
 
     // Προετοιμασία δεδομένων για εμφάνιση στη λίστα
     if (type == 'match') {
       final user = data as Tester;
       name = user.name;
-      subtitle = _getLastMessage(user: user, isGroup: false);
       if (user.profilePicture != null && user.profilePicture!.isNotEmpty) {
         image = FileImage(File(user.profilePicture!));
       }
@@ -435,7 +443,6 @@ class _ChatListPageState extends State<ChatListPage> {
       final group = data as Map;
       isGroup = true;
       name = group['name'] ?? 'Group';
-      subtitle = _getLastMessage(groupData: group, isGroup: true);
     }
 
     return GestureDetector(

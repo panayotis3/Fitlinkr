@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
+import '../utils/match_rules.dart';
 import 'chat_list_page.dart';
 import 'chat_page.dart';
 import 'edit_profile.dart';
@@ -264,17 +265,9 @@ class _SwipePageState extends State<SwipePage> {
       // Store current user in state
       _currentUser = currentUser;
       
-      // Determine which mode to check for likes based on current mode
       // Learners see Professionals who liked them, and vice versa
-      String modeToCheck;
-      if (widget.mode.toLowerCase() == 'learner') {
-        modeToCheck = 'Professional';
-      } else if (widget.mode.toLowerCase() == 'professional') {
-        modeToCheck = 'Learner';
-      } else {
-        modeToCheck = widget.mode;
-      }
-      
+      final modeToCheck = counterpartMode(widget.mode);
+
       final likedByMap = currentUser.likedBy ?? {};
       final whoLikedMe = likedByMap[modeToCheck] ?? [];
       debugPrint('Current user (${widget.currentUserEmail}) in ${widget.mode} mode checking likes from $modeToCheck mode: $whoLikedMe');
@@ -787,20 +780,11 @@ class _SwipePageState extends State<SwipePage> {
           if (currentUserKey != null) {
             final currentUser = box.get(currentUserKey);
             if (currentUser != null) {
-              // Determine which mode to check for cross-mode matching
-              // If I'm a Learner, check if Professional liked me
-              // If I'm a Professional, check if Learner liked me
-              String modeToCheck;
-              if (widget.mode.toLowerCase() == 'learner') {
-                modeToCheck = 'Professional';
-              } else if (widget.mode.toLowerCase() == 'professional') {
-                modeToCheck = 'Learner';
-              } else {
-                modeToCheck = widget.mode;
-              }
-              
+              // If I'm a Learner, check whether they liked me as a Professional
+              // (and vice versa).
               final myLikedByMap = currentUser.likedBy ?? {};
-              final peopleWhoLikedMe = myLikedByMap[modeToCheck] ?? [];
+              final peopleWhoLikedMe =
+                  myLikedByMap[counterpartMode(widget.mode)] ?? [];
               
               // If the person I just liked has also liked me, it's a match!
               if (peopleWhoLikedMe.contains(likedUserEmail.toLowerCase())) {
