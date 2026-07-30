@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/tester.dart';
+import '../utils/validators.dart';
 import 'login.dart';
 import 'swipe.dart';
 import 'verification_page.dart';
@@ -694,15 +695,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           borderSide: BorderSide.none,
                         ),
                       ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Enter your age';
-                        }
-                        if (int.tryParse(v.trim()) == null) {
-                          return 'Enter a valid number';
-                        }
-                        return null;
-                      },
+                      validator: validateAge,
                     ),
 
                     const SizedBox(height: 12),

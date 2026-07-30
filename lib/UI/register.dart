@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bcrypt/bcrypt.dart'; 
-import '../models/tester.dart'; 
+import '../models/tester.dart';
+import '../utils/validators.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -98,13 +99,14 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
     // ελεγχος εγκυρότητας ηλικίας (18-120)
-    int? ageInput = int.tryParse(_ageController.text);
-    if (ageInput == null || ageInput < 18 || ageInput > 120) {
+    final ageError = validateAge(_ageController.text);
+    if (ageError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a valid age (18+)")),
+        SnackBar(content: Text(ageError)),
       );
       return;
     }
+    final int ageInput = int.parse(_ageController.text.trim());
     // ελεγχος μορφής Email 
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(_emailController.text)) {

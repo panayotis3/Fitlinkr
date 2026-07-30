@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 import '../models/tester.dart';
 import '../utils/match_rules.dart';
 import 'swipe.dart';
@@ -83,22 +84,30 @@ class _ChatListPageState extends State<ChatListPage> {
       List<Map<String, dynamic>> tempList = [];
 
       for (var match in foundMatches) {
-        tempList.add({'type': 'match', 'data': match, 'timestamp': DateTime.fromMillisecondsSinceEpoch(0)});
+        tempList.add({'type': 'match', 'data': match});
       }
 
       for (var group in myGroups) {
-        final gMap = group as Map;
-        DateTime time = gMap['created_at'] != null ? DateTime.parse(gMap['created_at']) : DateTime.now();
-        tempList.add({'type': 'group', 'data': gMap, 'timestamp': time});
+        tempList.add({'type': 'group', 'data': group as Map});
       }
-
-      // Ταξινόμηση: Νεότερα πρώτα
-      tempList.sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
 
       // Το τελευταίο μήνυμα κάθε συνομιλίας, πριν το build.
       for (final item in tempList) {
-        item['preview'] = await _loadPreview(item);
+        final last = await _loadPreview(item);
+        item['preview'] = last.preview;
+        item['timestamp'] = last.lastActivity;
       }
+
+      // Ταξινόμηση: πρώτα οι νέες συνομιλίες χωρίς μηνύματα, μετά οι
+      // υπόλοιπες με τις πιο πρόσφατες πρώτα.
+      tempList.sort((a, b) {
+        final aTime = a['timestamp'] as DateTime?;
+        final bTime = b['timestamp'] as DateTime?;
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return -1;
+        if (bTime == null) return 1;
+        return bTime.compareTo(aTime);
+      });
 
       if (mounted) {
         setState(() {
@@ -387,7 +396,9 @@ class _ChatListPageState extends State<ChatListPage> {
   // Διαβάζει το τελευταίο μήνυμα μιας συνομιλίας.
   // Ανοίγει το box αν χρειάζεται - δεν αρκεί να ελέγξουμε αν είναι ήδη ανοιχτό,
   // γιατί σε καθαρή εκκίνηση της εφαρμογής δεν είναι ανοιχτό κανένα.
-  Future<String> _loadPreview(Map<String, dynamic> item) async {
+  Future<({String preview, DateTime? lastActivity})> _loadPreview(
+    Map<String, dynamic> item,
+  ) async {
     final isGroup = item['type'] == 'group';
     final fallback = isGroup ? 'Send a message' : "It's a match! Say hello.";
 
@@ -401,22 +412,49 @@ class _ChatListPageState extends State<ChatListPage> {
             );
 
       final chatBox = await Hive.openBox(chatId);
-      if (chatBox.isEmpty) return fallback;
+      if (chatBox.isEmpty) return (preview: fallback, lastActivity: null);
 
       final lastMsg = chatBox.getAt(chatBox.length - 1);
-      if (lastMsg is! Map) return fallback;
+      if (lastMsg is! Map) return (preview: fallback, lastActivity: null);
+
+      final rawTime = lastMsg['timestamp'];
+      final lastActivity = rawTime is DateTime ? rawTime : null;
 
       final text = lastMsg['text'] as String?;
       if (text != null && text.isNotEmpty) {
-        return text.length > 30 ? '${text.substring(0, 30)}...' : text;
+        return (
+          preview: text.length > 30 ? '${text.substring(0, 30)}...' : text,
+          lastActivity: lastActivity,
+        );
       }
-      if (lastMsg['imagePath'] != null) return '📷 Photo';
+      if (lastMsg['imagePath'] != null) {
+        return (preview: '📷 Photo', lastActivity: lastActivity);
+      }
 
-      return fallback;
+      return (preview: fallback, lastActivity: lastActivity);
     } catch (e) {
       debugPrint('Error getting last message: $e');
-      return fallback;
+      return (preview: fallback, lastActivity: null);
     }
+  }
+
+  // Μορφοποίηση της ώρας στη λίστα συνομιλιών:
+  //   σήμερα -> ώρα, χθες -> "Yesterday",
+  //   αυτή την εβδομάδα -> ημέρα, παλαιότερα -> ημερομηνία.
+  String _formatTimestamp(DateTime? time) {
+    if (time == null) return '';
+
+    final now = DateTime.now();
+    // Σύγκριση ημερολογιακών ημερών, όχι ωρών: 23:59 χθες και 00:01 σήμερα
+    // απέχουν λιγότερο από 24 ώρες αλλά είναι διαφορετικές ημέρες.
+    final today = DateTime(now.year, now.month, now.day);
+    final thatDay = DateTime(time.year, time.month, time.day);
+    final daysAgo = today.difference(thatDay).inDays;
+
+    if (daysAgo <= 0) return DateFormat('HH:mm').format(time);
+    if (daysAgo == 1) return 'Yesterday';
+    if (daysAgo < 7) return DateFormat('EEE').format(time);
+    return DateFormat('dd/MM/yy').format(time);
   }
 
   // Γενική μέθοδος εμφάνισης (User ή Group)
@@ -425,12 +463,12 @@ class _ChatListPageState extends State<ChatListPage> {
     final data = itemWrapper['data'];
     
     String name = '';
-    String time = 'Now';
     ImageProvider? image;
     bool isGroup = false;
 
-    // Το preview υπολογίστηκε ήδη στο _loadData.
+    // Preview και ώρα υπολογίστηκαν ήδη στο _loadData.
     final String subtitle = itemWrapper['preview'] as String? ?? '';
+    final String time = _formatTimestamp(itemWrapper['timestamp'] as DateTime?);
 
     // Προετοιμασία δεδομένων για εμφάνιση στη λίστα
     if (type == 'match') {
