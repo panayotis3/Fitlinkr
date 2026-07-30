@@ -442,13 +442,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       });
                                     }
                                   } catch (e) {
+                                    logDebug('Avatar update failed: $e');
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        SnackBar(
+                                        const SnackBar(
                                           content: Text(
-                                            'Error: ${e.toString()}',
+                                            'Could not update your photo. Please try again.',
                                           ),
                                         ),
                                       );
@@ -477,9 +478,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                             });
                                           }
                                         }).catchError((e) {
+                                          logDebug('Camera capture failed: $e');
                                           if (context.mounted) {
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text('Error: ${e.toString()}')),
+                                              const SnackBar(content: Text('Could not take a photo. Please try again.')),
                                             );
                                           }
                                         });
@@ -518,9 +520,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                             });
                                           }
                                         }).catchError((e) {
+                                          logDebug('Gallery pick failed: $e');
                                           if (context.mounted) {
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text('Error: ${e.toString()}')),
+                                              const SnackBar(content: Text('Could not load that photo. Please try again.')),
                                             );
                                           }
                                         });

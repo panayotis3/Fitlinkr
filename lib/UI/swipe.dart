@@ -322,9 +322,9 @@ class _SwipePageState extends State<SwipePage> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading users: ${e.toString()}'),
-            duration: const Duration(seconds: 3),
+          const SnackBar(
+            content: Text('Could not load profiles. Please try again.'),
+            duration: Duration(seconds: 3),
           ),
         );
       }

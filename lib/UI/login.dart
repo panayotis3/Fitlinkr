@@ -8,6 +8,7 @@ import 'register.dart';
 import 'edit_profile.dart'; 
 import 'forgot_password.dart';
 import '../models/tester.dart';
+import '../utils/logger.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -71,7 +72,8 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (context) => EditProfilePage(tester: tester)),
       );
     } catch (e) {
-      _showErrorSnackBar("Login failed: $e");
+      logDebug("Login failed: $e");
+      _showErrorSnackBar("Something went wrong. Please try again.");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -162,7 +162,10 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       logDebug("Error saving user: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text("Error: $e")),
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text("Could not complete registration. Please try again."),
+        ),
       );
     }
   }
