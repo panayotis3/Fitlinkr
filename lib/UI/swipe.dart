@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart';
+import '../utils/logger.dart';
 import '../utils/match_rules.dart';
 import 'chat_list_page.dart';
 import 'chat_page.dart';
@@ -228,25 +229,25 @@ class _SwipePageState extends State<SwipePage> {
     try {
       final box = await Hive.openBox<Tester>('testers_v2');
       final interactionsBox = await Hive.openBox('user_interactions');
-      debugPrint('Total users in box: ${box.length}');
+      logDebug('Total users in box: ${box.length}');
       
       // Get list of users I've already interacted with in this mode
       final myInteractionKey = '${widget.currentUserEmail.toLowerCase()}_${widget.mode.toLowerCase()}';
       final myInteractions = interactionsBox.get(myInteractionKey, defaultValue: <String>[]) as List;
       final interactedEmails = myInteractions.cast<String>().toSet();
-      debugPrint('Already interacted with ${interactedEmails.length} users in ${widget.mode} mode');
+      logDebug('Already interacted with ${interactedEmails.length} users in ${widget.mode} mode');
       
       var allUsers = box.values.where((user) => 
         user.email.toLowerCase() != widget.currentUserEmail.toLowerCase() &&
         !interactedEmails.contains(user.email.toLowerCase())
       ).toList();
       
-      debugPrint('Users after filtering current user and interactions: ${allUsers.length}');
+      logDebug('Users after filtering current user and interactions: ${allUsers.length}');
       
       // If in Learner mode, only show verified professionals
       if (widget.mode.toLowerCase() == 'learner') {
         allUsers = allUsers.where((user) => user.isProfessionalVerified).toList();
-        debugPrint('Learner mode: Filtered to verified professionals only: ${allUsers.length}');
+        logDebug('Learner mode: Filtered to verified professionals only: ${allUsers.length}');
       }
       //  Φιλτράρισμα χρηστών που έχουμε ηδη κάνει like για να μην εμφανιζονται ξανα
       allUsers = allUsers.where((user) {
@@ -270,7 +271,7 @@ class _SwipePageState extends State<SwipePage> {
 
       final likedByMap = currentUser.likedBy ?? {};
       final whoLikedMe = likedByMap[modeToCheck] ?? [];
-      debugPrint('Current user (${widget.currentUserEmail}) in ${widget.mode} mode checking likes from $modeToCheck mode: $whoLikedMe');
+      logDebug('Checking likes from $modeToCheck mode: ${whoLikedMe.length} found');
 
       // Separate users who liked you and others
       final usersWhoLikedYou = <Tester>[];
@@ -279,19 +280,19 @@ class _SwipePageState extends State<SwipePage> {
       for (final user in allUsers) {
         try {
           if (whoLikedMe.contains(user.email.toLowerCase())) {
-            debugPrint('${user.email} liked me - adding to priority list');
+            logDebug('Candidate liked me - adding to priority list');
             usersWhoLikedYou.add(user);
           } else {
             otherUsers.add(user);
           }
         } catch (e) {
-          debugPrint('Error processing user ${user.email}: $e');
+          logDebug('Error processing candidate: $e');
           otherUsers.add(user);
         }
       }
       
-      debugPrint('Users who liked you: ${usersWhoLikedYou.length}');
-      debugPrint('Other users: ${otherUsers.length}');
+      logDebug('Users who liked you: ${usersWhoLikedYou.length}');
+      logDebug('Other users: ${otherUsers.length}');
 
       final prioritizedUsers = [...usersWhoLikedYou, ...otherUsers];
 
@@ -312,10 +313,10 @@ class _SwipePageState extends State<SwipePage> {
         _isLoading = false;
       });
       
-      debugPrint('Final accounts to show: ${_accounts.length}');
+      logDebug('Final accounts to show: ${_accounts.length}');
     } catch (e, stackTrace) {
-      debugPrint('Error loading users: $e');
-      debugPrint('Stack trace: $stackTrace');
+      logDebug('Error loading users: $e');
+      logDebug('Stack trace: $stackTrace');
       
       setState(() => _isLoading = false);
       
@@ -643,7 +644,7 @@ class _SwipePageState extends State<SwipePage> {
           (t) => t.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),
         );
       } catch (e) {
-        debugPrint('Error fetching user data: $e');
+        logDebug('Error fetching user data: $e');
       }
     }
 
@@ -728,10 +729,10 @@ class _SwipePageState extends State<SwipePage> {
       if (!interactionsList.contains(userEmail.toLowerCase())) {
         interactionsList.add(userEmail.toLowerCase());
         await interactionsBox.put(myInteractionKey, interactionsList);
-        debugPrint('Saved interaction with $userEmail in ${widget.mode} mode');
+        logDebug('Saved interaction in ${widget.mode} mode');
       }
     } catch (e) {
-      debugPrint('Error saving interaction: $e');
+      logDebug('Error saving interaction: $e');
     }
   }
 
@@ -795,7 +796,7 @@ class _SwipePageState extends State<SwipePage> {
         }
       }
     } catch (e) {
-      debugPrint('Error saving like: $e');
+      logDebug('Error saving like: $e');
     }
     return false; // Not a match
   }

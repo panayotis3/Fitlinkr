@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/tester.dart';
+import '../utils/logger.dart';
 import '../utils/match_rules.dart';
 
 class ChatPage extends StatefulWidget {
@@ -117,7 +118,7 @@ class _ChatPageState extends State<ChatPage> {
         Navigator.pop(context); // Κλείνει το Modal
         Navigator.pop(context); // Επιστροφή στη ChatListPage
       }
-    } catch (e) { debugPrint("Block error: $e"); }
+    } catch (e) { logDebug("Block error: $e"); }
   }
 
   // --- VIEW PROFILE MODAL (ΤΟ ΠΑΛΙΟ ΣΟΥ DESIGN) ---
@@ -337,7 +338,7 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
       if (image != null) _sendMessage(imagePath: image.path);
-    } catch (e) { debugPrint("Error: $e"); }
+    } catch (e) { logDebug("Error: $e"); }
   }
 
   void _removeUser(String email, String name) async {

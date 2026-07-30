@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bcrypt/bcrypt.dart'; 
 import '../models/tester.dart';
+import '../utils/logger.dart';
 import '../utils/validators.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -145,7 +146,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       await box.add(newTester); 
 
-      print("SUCCESS: User ${newTester.name} added to Hive! Total users: ${box.length}");
+      logDebug("Registration succeeded. Total users: ${box.length}");
 
       if (!mounted) return; // Έλεγχος ασφαλείας ότι η σελίδα υπάρχει ακόμα
 
@@ -159,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
       Navigator.pop(context); 
 
     } catch (e) {
-      print("Error saving user: $e");
+      logDebug("Error saving user: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(backgroundColor: Colors.red, content: Text("Error: $e")),
       );

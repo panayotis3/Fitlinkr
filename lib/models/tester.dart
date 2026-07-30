@@ -1,5 +1,7 @@
 import 'package:hive/hive.dart';
 
+import '../utils/logger.dart';
+
 
 
 class Tester {
@@ -82,7 +84,7 @@ class TesterAdapter extends TypeAdapter<Tester> {
       }
     } catch (e) {
       // Old format or corrupt data - just use null
-      print('Could not read likedBy (old format or corrupt): $e');
+      logDebug('Could not read likedBy (old format or corrupt): $e');
       likedBy = null;
     }
     

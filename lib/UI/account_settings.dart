@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:bcrypt/bcrypt.dart';
 
 import '../models/tester.dart';
+import '../utils/logger.dart';
 import 'login.dart';
 
 class AccountSettingsPage extends StatefulWidget {
@@ -258,7 +259,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               await file.delete();
             }
           } catch (e) {
-            print('Error deleting profile picture: $e');
+            logDebug('Error deleting profile picture: $e');
           }
         }
 

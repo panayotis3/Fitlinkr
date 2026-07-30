@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; 
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tester.dart'; // 1. Added the missing import
+import '../utils/logger.dart';
 
 class VerificationProcessPage extends StatefulWidget {
   final String userMode; 
@@ -153,7 +154,7 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
                       }
                     }
                   } catch (e) {
-                    print('Error updating verification status: $e');
+                    logDebug('Error updating verification status: $e');
                   }
                   
                   setState(() {

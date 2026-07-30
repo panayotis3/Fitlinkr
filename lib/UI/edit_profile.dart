@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/tester.dart';
+import '../utils/logger.dart';
 import '../utils/validators.dart';
 import 'login.dart';
 import 'swipe.dart';
@@ -73,7 +74,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading profile data: $e');
+      logDebug('Error loading profile data: $e');
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import '../models/tester.dart';
+import '../utils/logger.dart';
 import '../utils/match_rules.dart';
 import 'swipe.dart';
 import 'edit_profile.dart'; 
@@ -68,7 +69,7 @@ class _ChatListPageState extends State<ChatListPage> {
             foundMatches.add(otherUser);
           }
         } catch (e) {
-          debugPrint("Match check failed for: $otherEmail");
+          logDebug("Match check failed for a liked user");
         }
       }
       _availableMatches = foundMatches;
@@ -116,7 +117,7 @@ class _ChatListPageState extends State<ChatListPage> {
         });
       }
     } catch (e) {
-      debugPrint("Error loading data: $e");
+      logDebug("Error loading data: $e");
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -433,7 +434,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
       return (preview: fallback, lastActivity: lastActivity);
     } catch (e) {
-      debugPrint('Error getting last message: $e');
+      logDebug('Error getting last message: $e');
       return (preview: fallback, lastActivity: null);
     }
   }
