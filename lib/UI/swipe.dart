@@ -755,21 +755,7 @@ class _SwipePageState extends State<SwipePage> {
           }
           currentLikedByMap[widget.mode] = modeList;
 
-          final updatedUser = Tester(
-            name: likedUser.name,
-            email: likedUser.email,
-            passwordHash: likedUser.passwordHash,
-            country: likedUser.country,
-            interests: likedUser.interests,
-            age: likedUser.age,
-            level: likedUser.level,
-            gender: likedUser.gender,
-            profilePicture: likedUser.profilePicture,
-            likedBy: currentLikedByMap,
-            isProfessionalVerified: likedUser.isProfessionalVerified,
-          );
-
-          await box.put(userKey, updatedUser);
+          await box.put(userKey, likedUser.copyWith(likedBy: currentLikedByMap));
           
           // Check if it's a mutual match
           // Get the current user

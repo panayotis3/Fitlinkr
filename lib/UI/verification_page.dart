@@ -137,20 +137,10 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
                     if (key != null) {
                       final currentUser = box.get(key);
                       if (currentUser != null) {
-                        final updatedUser = Tester(
-                          name: currentUser.name,
-                          email: currentUser.email,
-                          passwordHash: currentUser.passwordHash,
-                          country: currentUser.country,
-                          interests: currentUser.interests,
-                          age: currentUser.age,
-                          level: currentUser.level,
-                          gender: currentUser.gender,
-                          profilePicture: currentUser.profilePicture,
-                          likedBy: currentUser.likedBy,
-                          isProfessionalVerified: true, // Set verification to true
+                        await box.put(
+                          key,
+                          currentUser.copyWith(isProfessionalVerified: true),
                         );
-                        await box.put(key, updatedUser);
                       }
                     }
                   } catch (e) {

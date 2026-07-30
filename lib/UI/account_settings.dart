@@ -317,20 +317,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         }
 
         if (needsUpdate) {
-          final updatedUser = Tester(
-            name: user.name,
-            email: user.email,
-            passwordHash: user.passwordHash,
-            country: user.country,
-            interests: user.interests,
-            age: user.age,
-            level: user.level,
-            gender: user.gender,
-            profilePicture: user.profilePicture,
-            likedBy: likedByMap,
-            isProfessionalVerified: user.isProfessionalVerified,
-          );
-          await box.put(key, updatedUser);
+          await box.put(key, user.copyWith(likedBy: likedByMap));
         }
       }
     }

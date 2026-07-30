@@ -34,6 +34,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String? _avatarPath;
   String _currentMode = 'friend';
   bool _isProfessionalVerified = false;
+
+  /// Η τελευταία εγγραφή που διαβάστηκε από το Hive. Το `widget.tester` είναι
+  /// snapshot της στιγμής του login και παλιώνει - χρησιμοποιήστε αυτό για
+  /// δεδομένα, και το `widget.tester.email` μόνο ως ταυτότητα (δεν αλλάζει).
+  Tester? _currentTester;
   Image _modeIcon(String mode) {
     switch (mode) {
       case 'professional':
@@ -63,6 +68,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (mounted) {
         setState(() {
+          _currentTester = currentUser;
           _name = currentUser.name;
           _country = currentUser.country;
           _interests = currentUser.interests;
@@ -146,17 +152,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
           t.email.toLowerCase() == widget.tester.email.toLowerCase();
     }, orElse: () => null);
 
-    final updated = Tester(
+    // Διαβάζουμε την τρέχουσα εγγραφή αμέσως πριν το write. Το widget.tester
+    // είναι snapshot της στιγμής του login: αν στο μεταξύ μας έκανε like
+    // κάποιος, γράφοντας με βάση εκείνο θα σβήναμε το like.
+    final current = (key != null ? box.get(key) : null) ?? widget.tester;
+
+    final updated = current.copyWith(
       name: name,
-      email: widget.tester.email,
-      passwordHash: widget.tester.passwordHash,
       country: country,
       interests: interests,
-      age: int.tryParse(age) ?? widget.tester.age,
+      age: int.tryParse(age) ?? current.age,
       level: level,
       gender: gender,
       profilePicture: _avatarPath,
-      likedBy: widget.tester.likedBy,
       isProfessionalVerified: _isProfessionalVerified,
     );
 
@@ -1025,7 +1033,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => AccountSettingsPage(tester: widget.tester),
+                              builder: (context) => AccountSettingsPage(
+                                tester: _currentTester ?? widget.tester,
+                              ),
                             ),
                           );
                         },
@@ -1079,7 +1089,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 builder: (ctx) =>
                     VerificationProcessPage(
                       userMode: 'professional',
-                      tester: widget.tester,
+                      tester: _currentTester ?? widget.tester,
                     ),
               ),
             );

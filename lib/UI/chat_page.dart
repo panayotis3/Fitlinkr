@@ -102,15 +102,10 @@ class _ChatPageState extends State<ChatPage> {
         modeLikes.removeWhere((email) => email.toLowerCase() == widget.otherUser!.email.toLowerCase());
         updatedLikedBy[theirMode] = modeLikes;
 
-        final updatedUser = Tester(
-          name: myUser.name, email: myUser.email, passwordHash: myUser.passwordHash,
-          country: myUser.country, interests: myUser.interests, age: myUser.age,
-          level: myUser.level, gender: myUser.gender, profilePicture: myUser.profilePicture,
-          likedBy: updatedLikedBy,
-          isProfessionalVerified: myUser.isProfessionalVerified,
+        await userBox.putAt(
+          currentUserIndex,
+          myUser.copyWith(likedBy: updatedLikedBy),
         );
-
-        await userBox.putAt(currentUserIndex, updatedUser);
       }
 
       if (mounted) {

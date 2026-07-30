@@ -31,11 +31,54 @@ class Tester {
     this.isProfessionalVerified = false,
   });
 
+  /// Αντίγραφο της εγγραφής με αλλαγμένα μόνο τα πεδία που δίνονται.
+  ///
+  /// Προτιμήστε το από το να ξαναχτίζετε ολόκληρο το [Tester] με το χέρι:
+  /// εκεί, αν ξεχάσετε ένα πεδίο, παίρνει σιωπηλά την προεπιλογή του και τα
+  /// δεδομένα χάνονται χωρίς κανένα σφάλμα.
+  ///
+  /// Το [profilePicture] δέχεται ρητό null (διαγραφή φωτογραφίας), γι' αυτό
+  /// χρησιμοποιεί τον δείκτη [_unset] αντί για `??`.
+  Tester copyWith({
+    String? name,
+    String? email,
+    String? passwordHash,
+    String? country,
+    String? interests,
+    int? age,
+    String? level,
+    String? gender,
+    Object? profilePicture = _unset,
+    Map<String, List<String>>? likedBy,
+    bool? isProfessionalVerified,
+  }) {
+    return Tester(
+      name: name ?? this.name,
+      email: email ?? this.email,
+      passwordHash: passwordHash ?? this.passwordHash,
+      country: country ?? this.country,
+      interests: interests ?? this.interests,
+      age: age ?? this.age,
+      level: level ?? this.level,
+      gender: gender ?? this.gender,
+      profilePicture: identical(profilePicture, _unset)
+          ? this.profilePicture
+          : profilePicture as String?,
+      likedBy: likedBy ?? this.likedBy,
+      isProfessionalVerified:
+          isProfessionalVerified ?? this.isProfessionalVerified,
+    );
+  }
+
   @override
   String toString() {
     return 'Tester(name: $name, email: $email, country: $country, interests: $interests, age: $age, level: $level, gender: $gender)';
   }
 }
+
+/// Δείκτης "δεν δόθηκε τιμή", ώστε το [Tester.copyWith] να ξεχωρίζει το
+/// "άφησέ το ως έχει" από το "κάν' το ρητά null".
+const Object _unset = Object();
 
 
 class TesterAdapter extends TypeAdapter<Tester> {

@@ -172,12 +172,7 @@ class _ChatListPageState extends State<ChatListPage> {
         myModeLikes.remove(matchToDelete.email.toLowerCase());
         myLikes[theirMode] = myModeLikes;
 
-        await box.put(myKey, Tester(
-          name: me.name, email: me.email, passwordHash: me.passwordHash, country: me.country,
-          interests: me.interests, age: me.age, level: me.level, gender: me.gender,
-          profilePicture: me.profilePicture, likedBy: myLikes,
-          isProfessionalVerified: me.isProfessionalVerified,
-        ));
+        await box.put(myKey, me.copyWith(likedBy: myLikes));
       }
 
       // Αφαίρεση από τον άλλον
@@ -189,12 +184,7 @@ class _ChatListPageState extends State<ChatListPage> {
         otherModeLikes.remove(widget.currentUserEmail.toLowerCase());
         otherLikes[widget.mode] = otherModeLikes;
 
-        await box.put(otherKey, Tester(
-          name: other.name, email: other.email, passwordHash: other.passwordHash, country: other.country,
-          interests: other.interests, age: other.age, level: other.level, gender: other.gender,
-          profilePicture: other.profilePicture, likedBy: otherLikes,
-          isProfessionalVerified: other.isProfessionalVerified,
-        ));
+        await box.put(otherKey, other.copyWith(likedBy: otherLikes));
       }
 
       setState(() => _displayItems.remove(itemWrapper));
