@@ -96,9 +96,13 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 26, 5, 5), // Restored original dark red
       body: Center(
-        child: SizedBox(
-          width: 350,
-          child: SingleChildScrollView(
+        // maxWidth αντί για width: περιορίζει σε μεγάλες οθόνες αλλά
+        // συρρικνώνεται σε μικρές, με padding να μην κολλάει στις άκρες.
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 350),
+            child: SingleChildScrollView(
             child: Form(
               key: _formKey,
               child: Column(
@@ -180,6 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
+          ),
           ),
         ),
       ),

@@ -29,8 +29,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       body: Stack(
         children: [
           Center(
-            child: SizedBox(
-              width: 350, // Ίδιο πλάτος με το Login Page
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ConstrainedBox(
+              // Ίδιο πλάτος με το Login Page
+              constraints: const BoxConstraints(maxWidth: 350),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start, // Στοίχιση αριστερά όπως στο Login
@@ -129,8 +132,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
               ),
             ),
+            ),
           ),
-          
+
           // Το κόκκινο βελάκι κάτω αριστερά
           Positioned(
             bottom: 30,

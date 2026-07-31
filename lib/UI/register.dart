@@ -184,13 +184,18 @@ class _RegisterPageState extends State<RegisterPage> {
               toolbarHeight: 40,
             ),
             body: Center(
-              child: SizedBox(
-                width: 350,
-                child: SingleChildScrollView(
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height > 850 
-                        ? MediaQuery.of(context).size.height - 80 
-                        : 850,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 350),
+                // spaceEvenly χρειάζεται φραγμένο ύψος. Το παίρνουμε από τον
+                // LayoutBuilder αντί για μαγικό 850, και ως minHeight ώστε το
+                // περιεχόμενο να μεγαλώνει και να κυλάει αν δεν χωράει.
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -301,7 +306,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ],
                     ),
+                    ),
                   ),
+                  ),
+                ),
                 ),
               ),
             ),
@@ -354,23 +362,20 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildTextField(String hint, TextEditingController controller, {bool isPass = false, bool isNumber = false}) {
-    return SizedBox(
-      height: 35,
-      child: TextField(
-        controller: controller,
-        obscureText: isPass,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        style: const TextStyle(fontFamily: 'IstokWeb', color: Colors.black, fontSize: 13),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: const Color(0xFFD9D9D9),
-          hintText: hint,
-          hintStyle: TextStyle(fontFamily: 'IstokWeb', color: Colors.grey[600], fontSize: 13),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide.none,
-          ),
+    // Χωρίς SizedBox(height:): το πεδίο παίρνει ύψος από το περιεχόμενό του,
+    // ώστε να μεγαλώνει μαζί με το μέγεθος γραμματοσειράς του χρήστη.
+    // Fill, padding και density έρχονται από το InputDecorationTheme.
+    return TextField(
+      controller: controller,
+      obscureText: isPass,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      style: const TextStyle(fontFamily: 'IstokWeb', color: Colors.black, fontSize: 13),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(fontFamily: 'IstokWeb', color: Colors.grey[600], fontSize: 13),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -383,14 +388,14 @@ class _RegisterPageState extends State<RegisterPage> {
     required Function(String?) onChanged,
   }) {
     return Container(
-      height: 35,
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
       decoration: BoxDecoration(
         color: const Color(0xFFD9D9D9),
         borderRadius: BorderRadius.circular(20),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
+          isDense: true,
           value: value,
           hint: Text(hint, style: TextStyle(fontFamily: 'IstokWeb', color: Colors.grey[600], fontSize: 13)),
           isExpanded: true,
@@ -422,9 +427,8 @@ class _RegisterPageState extends State<RegisterPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 35,
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
           color: const Color(0xFFD9D9D9),

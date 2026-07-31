@@ -892,9 +892,10 @@ class _SwipePageState extends State<SwipePage> {
 
   Widget _buildProfileCard() {
     final account = _accounts[_currentIndex];
+    // maxWidth/minHeight αντί για σταθερές τιμές: η κάρτα περιέχει κείμενο,
+    // οπότε πρέπει να μπορεί να μεγαλώσει σε αυξημένο μέγεθος γραμματοσειράς.
     return Container(
-      width: 350,
-      height: 500,
+      constraints: const BoxConstraints(maxWidth: 350, minHeight: 500),
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: _theme.cardBackgroundColor,

@@ -3,7 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bcrypt/bcrypt.dart';
 
 import 'models/tester.dart';
-import 'ui/login.dart'; 
+import 'theme.dart';
+import 'ui/login.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,10 +95,7 @@ class FitLinkrApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FitLinkr',
-      theme: ThemeData(
-        fontFamily: 'IstokWeb', 
-        scaffoldBackgroundColor: const Color(0xFF1A0505), 
-      ),
+      theme: buildFitlinkrTheme(),
       home: const LoginPage(),
     );
   }
