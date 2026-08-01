@@ -1,13 +1,13 @@
 
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:bcrypt/bcrypt.dart';
+
+import '../data/user_repository.dart';
 
 
 import 'register.dart';
 import 'edit_profile.dart'; 
 import 'forgot_password.dart';
-import '../models/tester.dart';
 import '../utils/logger.dart';
 
 class LoginPage extends StatefulWidget {
@@ -19,6 +19,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+  final UserRepository _users = UserRepository();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -40,14 +41,7 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      // Open Hive Box
-      final box = await Hive.openBox<Tester>('testers_v2');
-      
-      // Find User
-      final tester = box.values.cast<Tester?>().firstWhere(
-        (t) => t != null && t.email.toLowerCase() == email.toLowerCase(),
-        orElse: () => null,
-      );
+      final tester = await _users.findByEmail(email);
 
       // Simulate a small delay for UX (Optional, remove if you want it instant)
       await Future.delayed(const Duration(seconds: 1));

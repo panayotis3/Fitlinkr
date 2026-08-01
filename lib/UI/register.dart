@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:bcrypt/bcrypt.dart'; 
+import 'package:bcrypt/bcrypt.dart';
+
+import '../data/user_repository.dart';
 import '../models/tester.dart';
 import '../utils/logger.dart';
 import '../utils/validators.dart';
@@ -13,6 +14,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final UserRepository _users = UserRepository();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -117,10 +119,10 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    final box = Hive.box<Tester>('testers_v2');
-    
-    bool emailExists = box.values.any((user) => user.email == _emailController.text);
-    
+    final emailExists = await _users.emailExists(_emailController.text);
+
+    if (!mounted) return;
+
     if (emailExists){
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -144,9 +146,9 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     try {
-      await box.add(newTester); 
+      await _users.create(newTester);
 
-      logDebug("Registration succeeded. Total users: ${box.length}");
+      logDebug("Registration succeeded");
 
       if (!mounted) return; // Έλεγχος ασφαλείας ότι η σελίδα υπάρχει ακόμα
 

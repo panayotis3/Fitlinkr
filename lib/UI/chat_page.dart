@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import '../data/chat_repository.dart';
+import '../data/user_repository.dart';
 import '../models/tester.dart';
 import '../utils/logger.dart';
-import '../utils/match_rules.dart';
 
 class ChatPage extends StatefulWidget {
   final Tester currentUser;
@@ -30,6 +31,8 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+  final ChatRepository _chats = ChatRepository();
+  final UserRepository _users = UserRepository();
   Box? _chatBox;
   bool _isBoxReady = false;
   
@@ -49,28 +52,16 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _openChatBox() async {
-    final chatId = widget.isGroup
-        ? groupChatThreadId('${widget.groupData!['id']}')
-        : directChatThreadId(
+    _chatBox = widget.isGroup
+        ? await _chats.openGroupThread('${widget.groupData!['id']}')
+        : await _chats.openDirectThread(
             myEmail: widget.currentUser.email,
             otherEmail: widget.otherUser!.email,
             mode: widget.userMode,
           );
 
-    _chatBox = await Hive.openBox(chatId);
-    _markMessagesAsSeen();
+    await _chats.markSeen(_chatBox!, widget.currentUser.email);
     if (mounted) setState(() => _isBoxReady = true);
-  }
-
-  void _markMessagesAsSeen() {
-    if (_chatBox == null) return;
-    for (int i = 0; i < _chatBox!.length; i++) {
-      var msg = _chatBox!.getAt(i);
-      if (msg is Map && msg['senderEmail'] != widget.currentUser.email) {
-        msg['status'] = 'seen';
-        _chatBox!.putAt(i, msg);
-      }
-    }
   }
 
   // --- ΛΕΙΤΟΥΡΓΙΕΣ ΔΙΑΓΡΑΦΗΣ (ΑΠΟ ΤΟ ΠΑΛΙΟ ΣΟΥ ΚΩΔΙΚΑ) ---
@@ -86,27 +77,12 @@ class _ChatPageState extends State<ChatPage> {
     if (widget.isGroup) return; // Δεν ισχύει για groups
     try {
       await _chatBox?.clear();
-      final userBox = Hive.box<Tester>('testers_v2');
-      final currentUserIndex = userBox.values.toList().indexWhere(
-        (u) => u.email.toLowerCase() == widget.currentUser.email.toLowerCase()
+
+      await _users.unmatch(
+        email: widget.currentUser.email,
+        otherEmail: widget.otherUser!.email,
+        mode: widget.userMode,
       );
-
-      if (currentUserIndex != -1) {
-        Tester myUser = userBox.getAt(currentUserIndex)!;
-        // Their like of me is stored under the mode they were swiping in,
-        // which is the counterpart of mine.
-        final theirMode = counterpartMode(widget.userMode);
-        Map<String, List<String>> updatedLikedBy = Map.from(myUser.likedBy ?? {});
-        List<String> modeLikes = List.from(updatedLikedBy[theirMode] ?? []);
-
-        modeLikes.removeWhere((email) => email.toLowerCase() == widget.otherUser!.email.toLowerCase());
-        updatedLikedBy[theirMode] = modeLikes;
-
-        await userBox.putAt(
-          currentUserIndex,
-          myUser.copyWith(likedBy: updatedLikedBy),
-        );
-      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User blocked and unmatched')));
@@ -245,8 +221,12 @@ class _ChatPageState extends State<ChatPage> {
 
   // --- GROUP MODAL ---
   // --- GROUP LOGIC & MODALS ---
-  void _showGroupDetails() {
-    final testerBox = Hive.box<Tester>('testers_v2');
+  Future<void> _showGroupDetails() async {
+    // Τα μέλη φορτώνονται ΠΡΙΝ ανοίξει το modal: μέσα στον builder δεν
+    // μπορούμε να κάνουμε await.
+    final members = await _users.findByEmails(_groupMembers);
+    if (!mounted) return;
+
     TextEditingController nameEdit = TextEditingController(text: _groupName);
     showModalBottomSheet(
       context: context,
@@ -276,7 +256,7 @@ class _ChatPageState extends State<ChatPage> {
               child: ListView(
                 shrinkWrap: true,
                 children: _groupMembers.map((email) {
-                  final member = testerBox.values.firstWhere((u) => u.email == email, orElse: () => widget.currentUser);
+                  final member = members[email.toLowerCase()] ?? widget.currentUser;
                   return ListTile(
                     onTap: () {
                       // Όταν πατάμε ένα μέλος, ανοίγει το προφίλ ΧΩΡΙΣ block option
@@ -357,28 +337,27 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _updateGroupInHive() async {
-    final groupBox = await Hive.openBox('groups');
-    final key = groupBox.keys.firstWhere((k) => groupBox.get(k)['id'] == widget.groupData!['id'], orElse: () => null);
-    if (key != null) {
-      final updatedData = Map<String, dynamic>.from(widget.groupData!);
-      updatedData['name'] = _groupName;
-      updatedData['members'] = _groupMembers;
-      updatedData['admin'] = _adminEmail;
-      await groupBox.put(key, updatedData);
-    }
-    setState(() {});
+    await _chats.updateGroup(
+      groupId: '${widget.groupData!['id']}',
+      name: _groupName,
+      members: _groupMembers,
+      adminEmail: _adminEmail,
+    );
+    if (mounted) setState(() {});
   }
 
-  void _showAddMembersDialog() {
-    final testerBox = Hive.box<Tester>('testers_v2');
-    final availableMatches = testerBox.values.where((user) {
-      final isMatch = isMutualMatch(
-        me: widget.currentUser,
-        other: user,
-        mode: widget.userMode,
-      );
-      return isMatch && !_groupMembers.contains(user.email);
-    }).toList();
+  Future<void> _showAddMembersDialog() async {
+    // Τα matches τα υπολογίζει το repository - ίδιος κανόνας με τη λίστα
+    // συνομιλιών, όχι δεύτερο αντίγραφο.
+    final matches = await _users.fetchMatches(
+      email: widget.currentUser.email,
+      mode: widget.userMode,
+    );
+    final availableMatches = matches
+        .where((user) => !_groupMembers.contains(user.email))
+        .toList();
+
+    if (!mounted) return;
 
     showDialog(
       context: context,

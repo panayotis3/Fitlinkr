@@ -1,11 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as p;
 
+import '../data/avatar_storage.dart';
+import '../data/user_repository.dart';
 import '../models/tester.dart';
 import '../utils/logger.dart';
 import '../utils/validators.dart';
@@ -24,6 +23,8 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final ImagePicker _picker = ImagePicker();
+  final UserRepository _users = UserRepository();
+  final AvatarStorage _avatars = AvatarStorage();
 
   String _name = '';
   String _country = '';
@@ -60,11 +61,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _loadProfileData() async {
     try {
-      final box = await Hive.openBox<Tester>('testers_v2');
-      final currentUser = box.values.firstWhere(
-        (u) => u.email.toLowerCase() == widget.tester.email.toLowerCase(),
-        orElse: () => widget.tester,
-      );
+      final currentUser =
+          await _users.findByEmail(widget.tester.email) ?? widget.tester;
 
       if (mounted) {
         setState(() {
@@ -98,43 +96,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<String> _saveImageToAppDir(XFile picked) async {
-    // Use an already open Hive box to get the storage directory
-    final box = await Hive.openBox<String>('avatars');
-    final boxPath = box.path;
-    if (boxPath == null) {
-      throw Exception('Could not determine storage path');
-    }
-
-    final hiveDir = Directory(boxPath).parent;
-    final avatarsDir = Directory(p.join(hiveDir.path, 'avatar_images'));
-    if (!await avatarsDir.exists()) {
-      await avatarsDir.create(recursive: true);
-    }
-
-    final ext = p.extension(picked.path);
-    final safeEmail = widget.tester.email.replaceAll(
-      RegExp(r'[^a-zA-Z0-9]'),
-      '_',
+  Future<String> _saveImageToAppDir(XFile picked) {
+    return _avatars.saveAvatar(
+      picked,
+      ownerEmail: widget.tester.email,
+      previousPath: _avatarPath,
     );
-    final fileName =
-        '${safeEmail}_${DateTime.now().millisecondsSinceEpoch}$ext';
-    final destPath = p.join(avatarsDir.path, fileName);
-
-    // Copy file to app dir
-    final destFile = await File(picked.path).copy(destPath);
-
-    // Clean up previous avatar file if present
-    if (_avatarPath != null) {
-      try {
-        final oldFile = File(_avatarPath!);
-        if (await oldFile.exists()) {
-          await oldFile.delete();
-        }
-      } catch (_) {}
-    }
-
-    return destFile.path;
   }
 
   Future<void> _saveProfile({
@@ -145,37 +112,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required String level,
     required String gender,
   }) async {
-    final box = await Hive.openBox<Tester>('testers_v2');
-    final key = box.keys.cast<dynamic>().firstWhere((k) {
-      final t = box.get(k);
-      return t != null &&
-          t.email.toLowerCase() == widget.tester.email.toLowerCase();
-    }, orElse: () => null);
-
-    // Διαβάζουμε την τρέχουσα εγγραφή αμέσως πριν το write. Το widget.tester
-    // είναι snapshot της στιγμής του login: αν στο μεταξύ μας έκανε like
-    // κάποιος, γράφοντας με βάση εκείνο θα σβήναμε το like.
-    final current = (key != null ? box.get(key) : null) ?? widget.tester;
-
-    final updated = current.copyWith(
+    // Το repository διαβάζει την τρέχουσα εγγραφή αμέσως πριν το write, ώστε
+    // αλλαγές που έγιναν μετά το login (π.χ. likes) να μη χάνονται.
+    await _users.updateProfile(
+      email: widget.tester.email,
       name: name,
       country: country,
       interests: interests,
-      age: int.tryParse(age) ?? current.age,
+      age: int.tryParse(age) ?? widget.tester.age,
       level: level,
       gender: gender,
       profilePicture: _avatarPath,
       isProfessionalVerified: _isProfessionalVerified,
     );
 
-    if (key != null) {
-      await box.put(key, updated);
-    } else {
-      await box.add(updated);
-    }
-
-    // Force a flush to ensure data is written to disk
-    await box.flush();
+    if (!mounted) return;
 
     setState(() {
       _name = name;

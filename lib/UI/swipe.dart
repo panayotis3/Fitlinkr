@@ -1,10 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import '../data/user_repository.dart';
 import '../models/tester.dart';
 import '../utils/logger.dart';
-import '../utils/match_rules.dart';
 import 'chat_list_page.dart';
 import 'chat_page.dart';
 import 'edit_profile.dart';
@@ -166,6 +165,7 @@ class SwipePage extends StatefulWidget {
 }
 
 class _SwipePageState extends State<SwipePage> {
+  final UserRepository _users = UserRepository();
   Offset _dragOffset = Offset.zero;
   int _currentIndex = 0;
   late ModeTheme _theme;
@@ -227,77 +227,22 @@ class _SwipePageState extends State<SwipePage> {
     setState(() => _isLoading = true);
     
     try {
-      final box = await Hive.openBox<Tester>('testers_v2');
-      final interactionsBox = await Hive.openBox('user_interactions');
-      logDebug('Total users in box: ${box.length}');
-      
-      // Get list of users I've already interacted with in this mode
-      final myInteractionKey = '${widget.currentUserEmail.toLowerCase()}_${widget.mode.toLowerCase()}';
-      final myInteractions = interactionsBox.get(myInteractionKey, defaultValue: <String>[]) as List;
-      final interactedEmails = myInteractions.cast<String>().toSet();
-      logDebug('Already interacted with ${interactedEmails.length} users in ${widget.mode} mode');
-      
-      var allUsers = box.values.where((user) => 
-        user.email.toLowerCase() != widget.currentUserEmail.toLowerCase() &&
-        !interactedEmails.contains(user.email.toLowerCase())
-      ).toList();
-      
-      logDebug('Users after filtering current user and interactions: ${allUsers.length}');
-      
-      // If in Learner mode, only show verified professionals
-      if (widget.mode.toLowerCase() == 'learner') {
-        allUsers = allUsers.where((user) => user.isProfessionalVerified).toList();
-        logDebug('Learner mode: Filtered to verified professionals only: ${allUsers.length}');
-      }
-      //  Φιλτράρισμα χρηστών που έχουμε ηδη κάνει like για να μην εμφανιζονται ξανα
-      allUsers = allUsers.where((user) {
-        final likedByMap = user.likedBy ?? {};
-        final likesInCurrentMode = likedByMap[widget.mode] ?? [];
-        // Αν το email μας είναι στη λίστα 'likedBy' του άλλου, σημαίνει πως του κάναμε ήδη like.
-        // Επιστρέφουμε false για να τον αφαιρέσουμε από τη λίστα προτεινόμενων.
-        return !likesInCurrentMode.contains(widget.currentUserEmail.toLowerCase());
-      }).toList();
-
-      final currentUser = box.values.firstWhere(
-        (u) => u.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),
-        orElse: () => Tester(name: '', email: '', passwordHash: '', country: '', interests: '', age: 0, level: '', gender: ''),
+      // Το repository αποφασίζει ΠΟΙΟΥΣ βλέπουμε (εξαιρέσεις, Learner-mode
+      // φίλτρο, προτεραιότητα σε όσους μας έκαναν like). Εδώ μένει μόνο η
+      // παρουσίαση.
+      final candidates = await _users.fetchSwipeCandidates(
+        viewerEmail: widget.currentUserEmail,
+        mode: widget.mode,
       );
-      
-      // Store current user in state
-      _currentUser = currentUser;
-      
-      // Learners see Professionals who liked them, and vice versa
-      final modeToCheck = counterpartMode(widget.mode);
 
-      final likedByMap = currentUser.likedBy ?? {};
-      final whoLikedMe = likedByMap[modeToCheck] ?? [];
-      logDebug('Checking likes from $modeToCheck mode: ${whoLikedMe.length} found');
+      _currentUser = await _users.findByEmail(widget.currentUserEmail);
 
-      // Separate users who liked you and others
-      final usersWhoLikedYou = <Tester>[];
-      final otherUsers = <Tester>[];
+      logDebug('Candidates to show: ${candidates.length}');
 
-      for (final user in allUsers) {
-        try {
-          if (whoLikedMe.contains(user.email.toLowerCase())) {
-            logDebug('Candidate liked me - adding to priority list');
-            usersWhoLikedYou.add(user);
-          } else {
-            otherUsers.add(user);
-          }
-        } catch (e) {
-          logDebug('Error processing candidate: $e');
-          otherUsers.add(user);
-        }
-      }
-      
-      logDebug('Users who liked you: ${usersWhoLikedYou.length}');
-      logDebug('Other users: ${otherUsers.length}');
-
-      final prioritizedUsers = [...usersWhoLikedYou, ...otherUsers];
+      if (!mounted) return;
 
       setState(() {
-        _allAccounts = prioritizedUsers.map((user) => {
+        _allAccounts = candidates.map((user) => {
           'email': user.email,
           'name': user.name,
           'age': user.age.toString(),
@@ -633,24 +578,18 @@ class _SwipePageState extends State<SwipePage> {
     
     if (_currentIndex > 0 && _currentIndex <= _accounts.length) {
       final matchedUserEmail = _accounts[_currentIndex - 1]['email']!;
-      final testerBox = await Hive.openBox<Tester>('testers_v2');
-      
+
       try {
-        matchedUser = testerBox.values.firstWhere(
-          (t) => t.email.toLowerCase() == matchedUserEmail.toLowerCase(),
-        );
-        
-        currentUser = testerBox.values.firstWhere(
-          (t) => t.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),
-        );
+        matchedUser = await _users.findByEmail(matchedUserEmail);
+        currentUser = await _users.findByEmail(widget.currentUserEmail);
       } catch (e) {
         logDebug('Error fetching user data: $e');
       }
     }
 
-    // ignore: use_build_context_synchronously
+    if (!mounted) return;
+
     showDialog(
-      // ignore: use_build_context_synchronously
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -720,71 +659,28 @@ class _SwipePageState extends State<SwipePage> {
 
   Future<void> _saveInteraction(String userEmail) async {
     try {
-      final interactionsBox = await Hive.openBox('user_interactions');
-      final myInteractionKey = '${widget.currentUserEmail.toLowerCase()}_${widget.mode.toLowerCase()}';
-      
-      final currentInteractions = interactionsBox.get(myInteractionKey, defaultValue: <String>[]) as List;
-      final interactionsList = currentInteractions.cast<String>().toList();
-      
-      if (!interactionsList.contains(userEmail.toLowerCase())) {
-        interactionsList.add(userEmail.toLowerCase());
-        await interactionsBox.put(myInteractionKey, interactionsList);
-        logDebug('Saved interaction in ${widget.mode} mode');
-      }
+      await _users.recordInteraction(
+        viewerEmail: widget.currentUserEmail,
+        mode: widget.mode,
+        targetEmail: userEmail,
+      );
     } catch (e) {
       logDebug('Error saving interaction: $e');
     }
   }
 
+  /// Καταγράφει το like και επιστρέφει true αν προέκυψε match.
   Future<bool> _saveLike(String likedUserEmail) async {
     try {
-      final box = await Hive.openBox<Tester>('testers_v2');
-      
-      final userKey = box.keys.firstWhere((key) {
-        final user = box.get(key);
-        return user != null && user.email.toLowerCase() == likedUserEmail.toLowerCase();
-      }, orElse: () => null);
-
-      if (userKey != null) {
-        final likedUser = box.get(userKey);
-        if (likedUser != null) {
-          final currentLikedByMap = Map<String, List<String>>.from(likedUser.likedBy ?? {});
-          final modeList = List<String>.from(currentLikedByMap[widget.mode] ?? []);
-          if (!modeList.contains(widget.currentUserEmail.toLowerCase())) {
-            modeList.add(widget.currentUserEmail.toLowerCase());
-          }
-          currentLikedByMap[widget.mode] = modeList;
-
-          await box.put(userKey, likedUser.copyWith(likedBy: currentLikedByMap));
-          
-          // Check if it's a mutual match
-          // Get the current user
-          final currentUserKey = box.keys.firstWhere((key) {
-            final user = box.get(key);
-            return user != null && user.email.toLowerCase() == widget.currentUserEmail.toLowerCase();
-          }, orElse: () => null);
-          
-          if (currentUserKey != null) {
-            final currentUser = box.get(currentUserKey);
-            if (currentUser != null) {
-              // If I'm a Learner, check whether they liked me as a Professional
-              // (and vice versa).
-              final myLikedByMap = currentUser.likedBy ?? {};
-              final peopleWhoLikedMe =
-                  myLikedByMap[counterpartMode(widget.mode)] ?? [];
-              
-              // If the person I just liked has also liked me, it's a match!
-              if (peopleWhoLikedMe.contains(likedUserEmail.toLowerCase())) {
-                return true; // It's a match!
-              }
-            }
-          }
-        }
-      }
+      return await _users.like(
+        fromEmail: widget.currentUserEmail,
+        toEmail: likedUserEmail,
+        mode: widget.mode,
+      );
     } catch (e) {
       logDebug('Error saving like: $e');
+      return false;
     }
-    return false; // Not a match
   }
 
   @override

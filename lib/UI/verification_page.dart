@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; 
-import 'package:hive_flutter/hive_flutter.dart';
+import '../data/user_repository.dart';
 import '../models/tester.dart'; // 1. Added the missing import
 import '../utils/logger.dart';
 
@@ -20,7 +20,8 @@ class VerificationProcessPage extends StatefulWidget {
 
 class _VerificationProcessPageState extends State<VerificationProcessPage> {
   final ImagePicker _picker = ImagePicker();
-  bool _isSubmitted = false; 
+  final UserRepository _users = UserRepository();
+  bool _isSubmitted = false;
   bool _isLoading = false; 
   XFile? _idImage;
   XFile? _certImage;
@@ -127,22 +128,7 @@ class _VerificationProcessPageState extends State<VerificationProcessPage> {
                   
                   // Update the user's verification status in Hive
                   try {
-                    final box = await Hive.openBox<Tester>('testers_v2');
-                    final key = box.keys.cast<dynamic>().firstWhere((k) {
-                      final t = box.get(k);
-                      return t != null &&
-                          t.email.toLowerCase() == widget.tester.email.toLowerCase();
-                    }, orElse: () => null);
-
-                    if (key != null) {
-                      final currentUser = box.get(key);
-                      if (currentUser != null) {
-                        await box.put(
-                          key,
-                          currentUser.copyWith(isProfessionalVerified: true),
-                        );
-                      }
-                    }
+                    await _users.setProfessionalVerified(widget.tester.email);
                   } catch (e) {
                     logDebug('Error updating verification status: $e');
                   }

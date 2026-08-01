@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:bcrypt/bcrypt.dart';
 
+import '../data/user_repository.dart';
 import '../models/tester.dart';
-import '../utils/logger.dart';
 import 'login.dart';
 
 class AccountSettingsPage extends StatefulWidget {
@@ -16,6 +14,7 @@ class AccountSettingsPage extends StatefulWidget {
 }
 
 class _AccountSettingsPageState extends State<AccountSettingsPage> {
+  final UserRepository _users = UserRepository();
   bool _isDeleting = false;
 
   Future<void> _showDeleteAccountDialog() async {
@@ -241,34 +240,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     });
 
     try {
-      final box = await Hive.openBox<Tester>('testers_v2');
+      final deleted = await _users.deleteAccount(widget.tester.email);
 
-      // Find the user's key
-      final key = box.keys.cast<dynamic>().firstWhere((k) {
-        final t = box.get(k);
-        return t != null &&
-            t.email.toLowerCase() == widget.tester.email.toLowerCase();
-      }, orElse: () => null);
-
-      if (key != null) {
-        // Delete profile picture if exists
-        if (widget.tester.profilePicture != null) {
-          try {
-            final file = File(widget.tester.profilePicture!);
-            if (await file.exists()) {
-              await file.delete();
-            }
-          } catch (e) {
-            logDebug('Error deleting profile picture: $e');
-          }
-        }
-
-        // Remove user from other users' likedBy lists
-        await _removeFromOtherUsersLikes(box);
-
-        // Delete the user account
-        await box.delete(key);
-
+      if (deleted) {
         // Success - navigate to login
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -294,31 +268,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         setState(() {
           _isDeleting = false;
         });
-      }
-    }
-  }
-
-  Future<void> _removeFromOtherUsersLikes(Box<Tester> box) async {
-    final userEmail = widget.tester.email.toLowerCase();
-
-    for (final key in box.keys) {
-      final user = box.get(key);
-      if (user != null && user.email.toLowerCase() != userEmail) {
-        bool needsUpdate = false;
-        final likedByMap = Map<String, List<String>>.from(user.likedBy ?? {});
-
-        // Remove this user from all mode lists
-        for (final mode in likedByMap.keys) {
-          final emailList = likedByMap[mode]!;
-          if (emailList.contains(userEmail)) {
-            emailList.remove(userEmail);
-            needsUpdate = true;
-          }
-        }
-
-        if (needsUpdate) {
-          await box.put(key, user.copyWith(likedBy: likedByMap));
-        }
       }
     }
   }

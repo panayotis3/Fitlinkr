@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import '../data/chat_repository.dart';
+import '../data/user_repository.dart';
 import '../models/tester.dart';
 import '../utils/logger.dart';
-import '../utils/match_rules.dart';
 import 'swipe.dart';
 import 'edit_profile.dart'; 
 import 'chat_page.dart';
@@ -24,6 +24,8 @@ class ChatListPage extends StatefulWidget {
 }
 
 class _ChatListPageState extends State<ChatListPage> {
+  final UserRepository _users = UserRepository();
+  final ChatRepository _chats = ChatRepository();
   late ModeTheme _theme;
   
   // Λίστα που περιέχει και Matches και Groups
@@ -45,41 +47,19 @@ class _ChatListPageState extends State<ChatListPage> {
   // Νέα λογική φόρτωσης (Matches + Groups)
   Future<void> _loadData() async {
     try {
-      final testerBox = await Hive.openBox<Tester>('testers_v2');
-      final groupBox = await Hive.openBox('groups'); // Νέο box
-      
-      final currentUser = testerBox.values.firstWhere(
-        (u) => u.email.toLowerCase() == widget.currentUserEmail.toLowerCase(),
-        orElse: () => Tester(name: 'User', email: widget.currentUserEmail, passwordHash: '', country: '', interests: '', age: 0, level: '', gender: ''),
+      _currentUser = await _users.findByEmail(widget.currentUserEmail) ??
+          Tester(name: 'User', email: widget.currentUserEmail, passwordHash: '', country: '', interests: '', age: 0, level: '', gender: '');
+
+      final foundMatches = await _users.fetchMatches(
+        email: widget.currentUserEmail,
+        mode: widget.mode,
       );
-      _currentUser = currentUser;
-
-      //  MATCHES
-      // Likes arrive from the counterpart mode: browsing as a Learner, I am
-      // liked by people browsing as Professionals, and vice versa.
-      final myLikedByMap = currentUser.likedBy ?? {};
-      final peopleWhoLikedMe = myLikedByMap[counterpartMode(widget.mode)] ?? [];
-      final foundMatches = <Tester>[];
-
-      for (var otherEmail in peopleWhoLikedMe) {
-        try {
-          final otherUser = testerBox.values.firstWhere((u) => u.email.toLowerCase() == otherEmail.toLowerCase());
-
-          if (isMutualMatch(me: currentUser, other: otherUser, mode: widget.mode)) {
-            foundMatches.add(otherUser);
-          }
-        } catch (e) {
-          logDebug("Match check failed for a liked user");
-        }
-      }
       _availableMatches = foundMatches;
 
-      // GROUPS
-      final myGroups = groupBox.values.where((g) {
-        final group = g as Map;
-        final members = List<String>.from(group['members'] ?? []);
-        return group['mode'] == widget.mode && members.contains(widget.currentUserEmail);
-      });
+      final myGroups = await _chats.groupsFor(
+        email: widget.currentUserEmail,
+        mode: widget.mode,
+      );
 
       // COMBINE & SORT 
       List<Map<String, dynamic>> tempList = [];
@@ -89,7 +69,7 @@ class _ChatListPageState extends State<ChatListPage> {
       }
 
       for (var group in myGroups) {
-        tempList.add({'type': 'group', 'data': group as Map});
+        tempList.add({'type': 'group', 'data': group});
       }
 
       // Το τελευταίο μήνυμα κάθε συνομιλίας, πριν το build.
@@ -124,20 +104,13 @@ class _ChatListPageState extends State<ChatListPage> {
 
   //  Δημιουργία Group
   Future<void> _createGroup(String groupName, Set<String> memberEmails) async {
-    final groupBox = await Hive.openBox('groups');
-    memberEmails.add(widget.currentUserEmail); 
-
-    final newGroup = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'name': groupName,
-      'mode': widget.mode,
-      'members': memberEmails.toList(),
-      'admin': widget.currentUserEmail,
-      'created_at': DateTime.now().toIso8601String(),
-    };
-
-    await groupBox.add(newGroup);
-    await _loadData(); 
+    await _chats.createGroup(
+      name: groupName,
+      mode: widget.mode,
+      adminEmail: widget.currentUserEmail,
+      memberEmails: memberEmails,
+    );
+    await _loadData();
   }
 
   //  Διαγραφή
@@ -149,46 +122,16 @@ class _ChatListPageState extends State<ChatListPage> {
     if (type == 'match') {
       // --- MATCH: Διαγραφή και από τους δύο (Κανονική λειτουργία) ---
       final matchToDelete = data as Tester;
-      final box = await Hive.openBox<Tester>('testers_v2');
 
-      final myKey = box.keys.firstWhere((k) {
-        final u = box.get(k);
-        return u != null && u.email.toLowerCase() == widget.currentUserEmail.toLowerCase();
-      }, orElse: () => null);
+      await _users.unmatch(
+        email: widget.currentUserEmail,
+        otherEmail: matchToDelete.email,
+        mode: widget.mode,
+      );
 
-      final otherKey = box.keys.firstWhere((k) {
-        final u = box.get(k);
-        return u != null && u.email.toLowerCase() == matchToDelete.email.toLowerCase();
-      }, orElse: () => null);
-
-      // Αφαίρεση από εμένα
-      // Το like τους προς εμένα είναι αποθηκευμένο με το mode στο οποίο
-      // έκαναν εκείνοι swipe, δηλαδή το counterpart του δικού μου.
-      if (myKey != null) {
-        final me = box.get(myKey)!;
-        final theirMode = counterpartMode(widget.mode);
-        final myLikes = Map<String, List<String>>.from(me.likedBy ?? {});
-        final myModeLikes = List<String>.from(myLikes[theirMode] ?? []);
-        myModeLikes.remove(matchToDelete.email.toLowerCase());
-        myLikes[theirMode] = myModeLikes;
-
-        await box.put(myKey, me.copyWith(likedBy: myLikes));
-      }
-
-      // Αφαίρεση από τον άλλον
-      // Το δικό μου like προς αυτούς είναι αποθηκευμένο με το δικό μου mode.
-      if (otherKey != null) {
-        final other = box.get(otherKey)!;
-        final otherLikes = Map<String, List<String>>.from(other.likedBy ?? {});
-        final otherModeLikes = List<String>.from(otherLikes[widget.mode] ?? []);
-        otherModeLikes.remove(widget.currentUserEmail.toLowerCase());
-        otherLikes[widget.mode] = otherModeLikes;
-
-        await box.put(otherKey, other.copyWith(likedBy: otherLikes));
-      }
+      if (!mounted) return;
 
       setState(() => _displayItems.remove(itemWrapper));
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chat deleted for both users.')));
 
     } else if (type == 'group') {
@@ -394,35 +337,28 @@ class _ChatListPageState extends State<ChatListPage> {
     final fallback = isGroup ? 'Send a message' : "It's a match! Say hello.";
 
     try {
-      final chatId = isGroup
-          ? groupChatThreadId('${(item['data'] as Map)['id']}')
-          : directChatThreadId(
+      final thread = isGroup
+          ? await _chats.openGroupThread('${(item['data'] as Map)['id']}')
+          : await _chats.openDirectThread(
               myEmail: _currentUser!.email,
               otherEmail: (item['data'] as Tester).email,
               mode: widget.mode,
             );
 
-      final chatBox = await Hive.openBox(chatId);
-      if (chatBox.isEmpty) return (preview: fallback, lastActivity: null);
+      final last = await _chats.lastMessage(thread);
 
-      final lastMsg = chatBox.getAt(chatBox.length - 1);
-      if (lastMsg is! Map) return (preview: fallback, lastActivity: null);
-
-      final rawTime = lastMsg['timestamp'];
-      final lastActivity = rawTime is DateTime ? rawTime : null;
-
-      final text = lastMsg['text'] as String?;
+      final text = last.text;
       if (text != null && text.isNotEmpty) {
         return (
           preview: text.length > 30 ? '${text.substring(0, 30)}...' : text,
-          lastActivity: lastActivity,
+          lastActivity: last.at,
         );
       }
-      if (lastMsg['imagePath'] != null) {
-        return (preview: '📷 Photo', lastActivity: lastActivity);
+      if (last.imagePath != null) {
+        return (preview: '📷 Photo', lastActivity: last.at);
       }
 
-      return (preview: fallback, lastActivity: lastActivity);
+      return (preview: fallback, lastActivity: last.at);
     } catch (e) {
       logDebug('Error getting last message: $e');
       return (preview: fallback, lastActivity: null);
