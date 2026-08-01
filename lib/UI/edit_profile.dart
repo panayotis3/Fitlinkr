@@ -268,47 +268,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  // ignore: unused_element
-  Future<void> _showTestersDialog() async {
-    final box = await Hive.openBox<Tester>('testers');
-    final testers = box.values.toList();
-
-    //xrhsh showDialog gia na emfanistei sthn mesi ths othonhs to edit profile
-    showDialog(
-      // ignore: use_build_context_synchronously
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A0505),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: testers.length,
-            itemBuilder: (context, index) {
-              final t = testers[index];
-              return ListTile(
-                title: Text(
-                  t.name,
-                  style: const TextStyle(color: Colors.white),
-                ),
-                subtitle: Text(
-                  '${t.email} • ${t.country} • ${t.interests} • ${t.age} • ${t.level}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CLOSE', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
   //pop up gia edit profile
   void _openEditModal() {
     // ignore: no_leading_underscores_for_local_identifiers
